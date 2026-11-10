@@ -1,0 +1,17 @@
+{
+  "name": "sayohatga",
+  "short_name": "sayohatga",
+  "description": "O'zbekiston tog'lari va o'rmonlariga sayohatlar, jihozlar ijarasi va sayohat lavhalari.",
+  "lang": "uz",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1F4D3A",
+  "theme_color": "#1F4D3A",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

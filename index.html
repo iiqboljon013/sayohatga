@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>sayohatga</title>
+<meta name="description" content="O'zbekiston tog'lari va o'rmonlariga sayohatlar, jihozlar ijarasi va sayohat lavhalari.">
+<meta name="theme-color" content="#1F4D3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="sayohatga">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="sayohatga">
+<meta property="og:description" content="Pulni to'y-hashamga emas, sayohatga sarflang.">
+<meta property="og:image" content="icon-512.png">
+<link rel="preconnect" href="https://idfkofehlsqvynoivadk.supabase.co">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<div id="boot" aria-hidden="true">
+  <div class="bloom"></div>
+  <div class="center">
+    <div class="word"><span class="ch" style="--i:0">s</span><span class="ch" style="--i:1">a</span><span class="ch" style="--i:2">y</span><span class="ch" style="--i:3">o</span><span class="ch" style="--i:4">h</span><span class="ch" style="--i:5">a</span><span class="ch" style="--i:6">t</span><span class="ch ga" style="--i:7">g</span><span class="ch ga" style="--i:8">a</span></div>
+    <svg viewBox="0 0 300 40"><path d="M4 36 L70 36 L104 10 L126 28 L150 6 L182 30 L204 18 L230 36 L296 36"/></svg>
+  </div>
+  <button class="skip" id="skip" type="button">O'tkazib yuborish →</button>
+</div>
+
+<!-- registration -->
+<div id="auth" hidden>
+  <div class="auth-in">
+    <div class="auth-logo">sayohat<b>ga</b></div>
+    <form id="authStep1" novalidate style="display:flex;flex-direction:column;gap:14px">
+      <h1>Ro'yxatdan o'tish</h1>
+      <p class="sub" style="font-size:14.5px">Tasdiqlash kodi Telegram'dagi @sayohatga_uz_bot orqali bepul yuboriladi.</p>
+      <div class="fld"><label for="aFirst">Ism</label><input id="aFirst" autocomplete="given-name" placeholder="Aziz"></div>
+      <div class="fld"><label for="aLast">Familiya</label><input id="aLast" autocomplete="family-name" placeholder="Karimov"></div>
+      <div class="fld"><label for="aPhone">Telefon raqam</label><div class="phone" id="aPhoneBox"><span>+998</span><input id="aPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="90 123 45 67" maxlength="12"></div></div>
+      <p class="err" id="aErr1" hidden></p>
+      <button class="glow" type="submit" style="margin:4px 0 0;justify-content:center;height:54px">Kod yuborish</button>
+    </form>
+    <form id="authStep2" novalidate hidden style="display:flex;flex-direction:column;gap:14px">
+      <h1>Kodni kiriting</h1>
+      <p class="sub" style="font-size:14.5px" id="aSentTo"></p>
+      <a class="glow" id="aTg" href="https://t.me/sayohatga_uz_bot?start=kod" target="_blank" rel="noopener" style="margin:0;justify-content:center;height:54px;background:linear-gradient(180deg,#3BA5E0,#2481CC);color:#fff;box-shadow:0 10px 26px -10px rgba(36,129,204,.8)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.4 3.6 2.9 10.7c-1.3.5-1.2 1.3-.2 1.6l4.7 1.5 1.8 5.6c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L22.9 5c.3-1.4-.5-2-1.5-1.4zM8.5 13.5l9.6-6-7.6 7.1-.3 3.4-1.7-4.5z"/></svg>Telegram'da kodni olish</a>
+      <label for="aCode" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Tasdiqlash kodi</label>
+      <input id="aCode" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="4" placeholder="····">
+      <p class="err" id="aErr2" hidden></p>
+      <button class="glow" type="submit" style="margin:0;justify-content:center;height:54px">Tasdiqlash</button>
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button type="button" class="linkbtn" id="aBack">← Raqamni o'zgartirish</button>
+        <button type="button" class="linkbtn" id="aResend">Botni qayta ochish</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<main class="app">
+  <div class="top">
+    <span class="logo">sayohat<span>ga</span></span>
+    <button class="glassbtn" type="button" aria-label="Bildirishnomalar" id="bell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg></button>
+  </div>
+
+  <section id="v-sayohat" style="display:flex;flex-direction:column;gap:20px">
+    <div class="hero rv">
+      <svg class="ridge" viewBox="0 0 400 90" preserveAspectRatio="none" aria-hidden="true"><path id="ridgePath" d="M0 80 L70 80 L120 30 L150 55 L200 10 L250 60 L285 40 L330 80 L400 80"/><circle id="spark" r="3" fill="#F2A65A" style="filter:drop-shadow(0 0 6px #F2A65A)"/></svg>
+      <h1 style="font-family:var(--logo);font-weight:700;font-size:clamp(46px,14vw,64px);letter-spacing:-.02em;padding-block:18px 8px">sayohat<span style="color:var(--dawn)">ga</span></h1>
+      <form class="search" id="sform" role="search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="color:var(--tx-3);flex:none"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label for="q" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Qayerga borasiz</label>
+        <input id="q" type="search" placeholder="Qayerga borasiz?" autocomplete="off">
+        <button class="go" type="submit" aria-label="Qidirish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+      </form>
+    </div>
+    <div class="sec rv"><div><h2>Sayohatlar</h2></div></div>
+    <div class="filters rv" id="filters">
+      <button type="button" data-f="all" aria-pressed="true">Hammasi</button>
+      <button type="button" data-f="Oson" aria-pressed="false">Oson</button>
+      <button type="button" data-f="O'rtacha" aria-pressed="false">O'rtacha</button>
+      <button type="button" data-f="Qiyin" aria-pressed="false">Qiyin</button>
+    </div>
+    <div id="tours" style="display:flex;flex-direction:column;gap:16px"></div>
+    <div class="sec rv" style="margin-top:8px"><div><h2>Lavhalar</h2></div><button type="button" class="chip" data-act="photo" style="color:var(--dawn);border-color:rgba(242,166,90,.4)">+ Rasm joylash</button></div>
+    <div id="feed" style="display:flex;flex-direction:column;gap:16px"></div>
+  </section>
+
+  <section id="v-ijara" hidden style="flex-direction:column;gap:18px">
+    <div class="sec rv"><div><h2>Jihozlar <span class="grad">ijarasi</span></h2></div><button type="button" class="chip" data-act="ijara" style="color:var(--dawn);border-color:rgba(242,166,90,.4)">+ Ijaraga berish</button></div>
+    <p class="rv" style="color:var(--tx-2)">Narxlar bir kun uchun. Jihozni bosib, batafsil ko'ring.</p>
+    <div class="gear" id="gear"></div>
+  </section>
+
+  <section id="v-band" hidden style="flex-direction:column;gap:18px">
+    <div class="sec rv"><div><h2>Bandlarim</h2></div></div>
+    <div id="booked"></div>
+  </section>
+
+  <section id="v-detail" hidden style="flex-direction:column;gap:18px"></section>
+  <section id="v-rent" hidden style="flex-direction:column;gap:18px"></section>
+
+  <section id="v-profil" hidden style="flex-direction:column;gap:18px">
+    <div class="prof rv">
+      <div class="avwrap">
+        <label class="avatar" for="avFile" id="profAv" aria-label="Profil rasmini o'zgartirish"></label>
+        <label class="cam" for="avFile" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></label>
+        <input id="avFile" type="file" accept="image/*" hidden>
+      </div>
+      <div style="min-width:0"><div class="name" style="font-size:24px;overflow-wrap:anywhere" id="profName"></div></div>
+    </div>
+    <div class="sec rv"><div><h2 style="font-size:20px">Mening e'lonlarim</h2></div></div>
+    <div id="myTours" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="sec rv"><div><h2 style="font-size:20px">Ijaraga berganlarim</h2></div><button type="button" class="chip" data-act="ijara" style="color:var(--dawn);border-color:rgba(242,166,90,.4)">+ Jihoz</button></div>
+    <div id="myRents" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="sec rv"><div><h2 style="font-size:20px">Lavhalarim</h2></div><span class="sub" id="myCount"></span></div>
+    <div id="myGrid"></div>
+    <div class="menu rv">
+      <a href="#" data-act="lang"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></span><span><b>Til</b><small>O'zbekcha</small></span><span class="arr">›</span></a>
+      <a href="#" data-act="help"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></span><span><b>Xavfsizlik va yordam</b><small>Favqulodda holatda: 112</small></span><span class="arr">›</span></a>
+      <a href="#" data-act="logout"><span class="ic" style="color:var(--rose)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg></span><span><b>Chiqish</b><small>Akkauntdan chiqish</small></span><span class="arr">›</span></a>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-label="Qo'shish">
+  <span class="grab"></span>
+  <h2>Nima qo'shamiz?</h2>
+  <button class="opt" type="button" data-act="photo"><span class="oi" style="background:rgba(127,200,255,.12);color:#9FD4FF"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span><b>Rasm joylash</b><span>Sayohatingizdan rasm ulashing</span></span></button>
+  <button class="opt" type="button" data-act="elon"><span class="oi" style="background:rgba(70,201,139,.14);color:var(--leaf)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 20 9 9l4 6 3-4 5 9z"/></svg></span><span><b>E'lon joylash</b><span>Sayohat, sana, narx, guruh</span></span></button>
+  <button class="opt" type="button" data-act="ijara"><span class="oi" style="background:rgba(242,166,90,.14);color:var(--dawn)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M7 8a5 5 0 0 1 10 0v12H7zM9 14h6M10 3h4"/></svg></span><span><b>Ijara</b><span>Jihozingizni ijaraga bering</span></span></button>
+</div>
+
+<div class="sheet" id="compose" hidden role="dialog" aria-label="Rasm joylash">
+  <span class="grab"></span>
+  <h2>Rasm joylash</h2>
+  <form id="postForm" novalidate style="display:flex;flex-direction:column;gap:12px">
+    <label class="drop" for="pFile"><img id="pPrev" alt="Tanlangan rasm" hidden><span id="dropHint"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><b>Rasm tanlang</b><small>Telefon galereyasidan</small></span></label>
+    <input id="pFile" type="file" accept="image/*" hidden>
+    <div class="fld"><label for="pPlace">Qayerda olingan</label><input id="pPlace" placeholder="Katta Chimyon" autocomplete="off"></div>
+    <div class="fld"><label for="pCap">Izoh</label><input id="pCap" placeholder="Tepaga 4 soatda chiqdik!" autocomplete="off"></div>
+    <p class="err" id="pErr" hidden></p>
+    <button class="glow" type="submit" style="margin:4px 0 0;justify-content:center;height:52px">Joylash</button>
+  </form>
+</div>
+
+<div class="sheet" id="newTour" hidden role="dialog" aria-label="E'lon joylash">
+  <span class="grab"></span>
+  <h2>E'lon joylash</h2>
+  <p class="sub">Yulduzchali maydonlar majburiy.</p>
+  <form id="tourForm" novalidate style="display:flex;flex-direction:column;gap:12px">
+    <span class="fsec">Sayohat</span>
+    <div class="fld"><label for="eName">Sayohat nomi *</label><input id="eName" placeholder="Katta Chimyon cho'qqisi" autocomplete="off"></div>
+    <div class="fld"><label for="ePlace">Joy (viloyat, tuman) *</label><input id="ePlace" placeholder="Toshkent viloyati, Bo'stonliq" autocomplete="off"></div>
+    <div class="fld"><label for="eDesc">Tavsif *</label><textarea id="eDesc" placeholder="Yo'l qanday, nimani ko'ramiz, kimlar uchun mos"></textarea></div>
+    <div class="fld"><label for="eQ">Xaritada qidirish uchun nom</label><input id="eQ" placeholder="Katta Chimyon" autocomplete="off"><small class="hint">Bo'sh qolsa, sayohat nomi ishlatiladi.</small></div>
+    <span class="fsec">Ketish va qaytish</span>
+    <div class="two"><div class="fld"><label for="eDepDate">Ketish sanasi *</label><input id="eDepDate" type="date"></div><div class="fld"><label for="eDepTime">Ketish vaqti *</label><input id="eDepTime" type="time"></div></div>
+    <div class="two"><div class="fld"><label for="eRetDate">Qaytish sanasi *</label><input id="eRetDate" type="date"></div><div class="fld"><label for="eRetTime">Qaytish vaqti *</label><input id="eRetTime" type="time"></div></div>
+    <div class="fld"><label for="eMeet">Yig'ilish joyi *</label><input id="eMeet" placeholder="Chorsu metro" autocomplete="off"></div>
+    <div class="fld"><label for="eLvl">Qiyinlik *</label><select id="eLvl"><option value="Oson">Oson</option><option value="O'rtacha" selected>O'rtacha</option><option value="Qiyin">Qiyin</option></select></div>
+    <div class="fld"><label for="eNeeds">Nimalar kerak</label><input id="eNeeds" placeholder="Suv, issiq kiyim, fonar" autocomplete="off"><small class="hint">Vergul bilan ajrating.</small></div>
+    <span class="fsec">Narx va guruh</span>
+    <div class="two"><div class="fld"><label for="ePrice">Narx, 1 kishi (so'm) *</label><input id="ePrice" type="number" inputmode="numeric" min="1000" step="1000" placeholder="300000"></div><div class="fld"><label for="eCap">Necha kishi oladi *</label><input id="eCap" type="number" inputmode="numeric" min="1" max="60" placeholder="12"></div></div>
+    <span class="fsec">Rasmlar (10 tagacha)</span>
+    <div class="thumbs" id="eThumbs"></div>
+    <input id="eFile" type="file" accept="image/*" multiple hidden>
+    <span class="fsec">Pul tushadigan karta</span>
+    <div class="fld"><label for="eCard">Karta raqami *</label><input id="eCard" inputmode="numeric" autocomplete="off" placeholder="8600 0000 0000 0000" maxlength="19"><small class="hint">Faqat oxirgi 4 raqami ko'rinadi.</small></div>
+    <div class="fld"><label for="eHolder">Karta egasi *</label><input id="eHolder" placeholder="ISM FAMILIYA" autocomplete="off"></div>
+    <p class="err" id="eErr" hidden></p>
+    <button class="glow" type="submit" style="margin:4px 0 0;justify-content:center;height:54px">E'lonni joylash</button>
+  </form>
+</div>
+
+<div class="sheet" id="newRent" hidden role="dialog" aria-label="Ijaraga berish">
+  <span class="grab"></span>
+  <h2>Ijaraga berish</h2>
+  <p class="sub">Rasm qo'ymasangiz, sayohatga logotipi ko'rinadi.</p>
+  <form id="rentForm" novalidate style="display:flex;flex-direction:column;gap:12px">
+    <div class="fld"><label for="rName">Jihoz nomi *</label><input id="rName" placeholder="Palatka, 3 kishilik" autocomplete="off"></div>
+    <div class="two"><div class="fld"><label for="rPrice">Narx, kuniga (so'm) *</label><input id="rPrice" type="number" inputmode="numeric" min="1000" step="1000" placeholder="40000"></div><div class="fld"><label for="rWhere">Qayerdan olinadi *</label><input id="rWhere" placeholder="Chilonzor" autocomplete="off"></div></div>
+    <div class="fld"><label for="rDesc">Tavsif</label><textarea id="rDesc" placeholder="Holati, o'lchami, nimalar bilan beriladi"></textarea></div>
+    <span class="fsec">Rasmlar (10 tagacha)</span>
+    <div class="thumbs" id="rThumbs"></div>
+    <input id="rFile" type="file" accept="image/*" multiple hidden>
+    <p class="err" id="rErr" hidden></p>
+    <button class="glow" type="submit" style="margin:4px 0 0;justify-content:center;height:54px">Joylash</button>
+  </form>
+</div>
+
+<div class="sheet" id="pay" hidden role="dialog" aria-label="To'lov">
+  <span class="grab"></span>
+  <h2>To'lov</h2>
+  <div id="payBody" style="display:flex;flex-direction:column;gap:12px">
+    <div class="sumbox" id="paySum"></div>
+    <span class="sub">To'lov turini tanlang</span>
+    <div class="methods" role="radiogroup" aria-label="To'lov turi">
+      <button type="button" class="mt" role="radio" aria-checked="false" data-m="Uzum Bank"><i>U</i>Uzum Bank</button>
+      <button type="button" class="mt" role="radio" aria-checked="false" data-m="Payme"><i>P</i>Payme</button>
+      <button type="button" class="mt" role="radio" aria-checked="false" data-m="Paynet"><i>P</i>Paynet</button>
+      <button type="button" class="mt" role="radio" aria-checked="false" data-m="Click"><i>C</i>Click</button>
+    </div>
+    <div class="cardline" id="payTo"></div>
+    <p class="err" id="payErr" hidden>To'lov turini tanlang.</p>
+    <button class="glow" type="button" id="payBtn" style="margin:2px 0 0;justify-content:center;height:54px">To'lash</button>
+    <p class="sub" style="font-size:12px;text-align:center">Sinov rejimi: haqiqiy pul yechilmaydi.</p>
+  </div>
+  <div class="payok" id="payOk" hidden><i><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></i><b style="font-size:18px">To'lov qabul qilindi</b><span class="sub" id="payOkTxt"></span></div>
+</div>
+
+<div class="sheet" id="cmts" hidden role="dialog" aria-label="Izohlar">
+  <span class="grab"></span>
+  <h2 id="cmtTitle">Izohlar</h2>
+  <div class="list" id="cmtList"></div>
+  <form class="cform" id="cmtForm"><label for="cmtIn" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Izoh</label><input id="cmtIn" placeholder="Izoh yozing…" autocomplete="off" maxlength="500"><button type="submit" aria-label="Yuborish"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 20.5 21 12 3 3.5v7l12 1.5-12 1.5z"/></svg></button></form>
+</div>
+
+<div class="sheet" id="share" hidden role="dialog" aria-label="Ulashish">
+  <span class="grab"></span>
+  <h2>Ulashish</h2>
+  <p class="sub" id="shareWhat"></p>
+  <div class="sharebox"><label for="shareUrl" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Havola</label><input id="shareUrl" readonly><button type="button" id="shareCopy">Nusxalash</button></div>
+  <div class="sharerow"><a id="shareTg" href="#" target="_blank" rel="noopener">Telegram</a><a id="shareWa" href="#" target="_blank" rel="noopener">WhatsApp</a></div>
+  <p class="notice" id="shareNote" hidden>Bu e'lon hozircha faqat sizning qurilmangizda saqlangan. Havolani ochgan odam uni ko'rishi uchun ilovaning serveri kerak bo'ladi. Buni haqiqiy ilovada qilamiz.</p>
+</div>
+
+<div class="sheet" id="ask" hidden role="dialog" aria-label="Tasdiqlash">
+  <span class="grab"></span>
+  <h2 id="askTitle"></h2>
+  <p class="sub" id="askText"></p>
+  <div class="rowbtns"><button type="button" class="ghost" id="askNo">Bekor qilish</button><button type="button" class="dangerfill" id="askYes">O'chirish</button></div>
+</div>
+
+<div class="buybar" id="buybar" hidden>
+  <div class="in">
+    <div class="stepper" aria-label="Necha kishi"><button type="button" id="qMinus" aria-label="Bir kishi kamaytirish">−</button><b id="qVal">1</b><button type="button" id="qPlus" aria-label="Bir kishi qo'shish">+</button></div>
+    <button class="glow" type="button" id="buyBtn">Joy band qilish</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden role="status"><i></i><span id="toastTxt"></span></div>
+
+<nav class="tab" aria-label="Asosiy menyu">
+  <div class="pill-nav">
+    <button type="button" data-v="sayohat" aria-current="page"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 20 9 9l4 6 3-4 5 9z"/></svg>Sayohatlar</button>
+    <button type="button" data-v="ijara"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M7 8a5 5 0 0 1 10 0v12H7zM9 14h6M10 3h4"/></svg>Ijara<span class="badge" id="cartBadge" hidden>0</span></button>
+    <button type="button" class="plus" id="plus" aria-label="Qo'shish" aria-expanded="false"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" data-v="band"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M9 3v4M15 3v4"/></svg>Bandlarim</button>
+    <button type="button" data-v="profil"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0"/></svg>Profil</button>
+  </div>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
