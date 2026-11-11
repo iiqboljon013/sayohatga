@@ -96,14 +96,19 @@ const observe = root => { const els = root.querySelectorAll('.rv:not(.in)'); els
 const lvlCls = l => ({'Oson':'p-easy',"O'rtacha":'p-mid','Qiyin':'p-hard'}[l] || 'p-mid');
 const tourThumb = t => t.photos.length ? `<img src="${esc(t.photos[0])}" alt="${esc(t.name)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : logoPh();
 let filter = 'all';
+/* seats drawn as a row of places (like a minibus) when the group is small, a bar otherwise */
+function seatsHTML(t){
+if (t.cap <= 24) return `<span class="seatmap" aria-hidden="true">${Array.from({length:t.cap}, (_, k) => `<i class="${k < t.taken ? 'on' : ''}"></i>`).join('')}</span>`;
+return `<div class="meter"><i data-fill="${Math.round(t.taken / t.cap * 100)}"></i></div>`;
+}
 function tourCard(t){
-const b = !!t.mine, own = isMine(t), g = person(t.ownerId);
+const b = !!t.mine, own = isMine(t), g = person(t.ownerId), full = t.taken >= t.cap;
 return `<article class="card rv" data-open="t:${t.id}" tabindex="0" aria-label="${esc(t.name)} — batafsil">
-<div class="photo">${tourThumb(t)}<span class="pill ${lvlCls(t.lvl)}">${esc(t.lvl)}</span>${t.photos.length > 1 ? `<span class="nph">${camIc}${t.photos.length}</span>` : ''}</div>
+<div class="photo">${tourThumb(t)}<span class="pill ${lvlCls(t.lvl)}">${esc(t.lvl)}</span>${t.photos.length > 1 ? `<span class="nph">${camIc}${t.photos.length}</span>` : ''}<span class="ptag"><b class="price">${fmt(t.p)}</b><small>1 kishi</small></span></div>
 <div class="cbody">
-<div class="row"><div style="min-width:0"><div class="name">${esc(t.name)}</div><div class="sub">${esc(t.place)}</div></div><div style="text-align:right"><div class="price">${fmt(t.p)}</div><div class="sub">1 kishi</div></div></div>
-<div class="meta two"><div><span>KETISH</span><b>${dShort(t.depDate)}, ${t.depTime}</b></div><div><span>QAYTISH</span><b>${dShort(t.retDate)}, ${t.retTime}</b></div></div>
-<div class="slots"><span>Joylar</span><div class="meter"><i data-fill="${Math.round(t.taken / t.cap * 100)}"></i></div><b style="color:var(--tx);font-variant-numeric:tabular-nums">${t.taken}/${t.cap}</b></div>
+<div class="ctitle"><div class="name">${esc(t.name)}</div><div class="place">${esc(t.place)}</div></div>
+<div class="route"><div class="rt"><span class="mono">KETISH</span><b>${dShort(t.depDate)}</b><small>${t.depTime}</small></div><i class="rtline" aria-hidden="true"></i><div class="rt end"><span class="mono">QAYTISH</span><b>${dShort(t.retDate)}</b><small>${t.retTime}</small></div></div>
+<div class="slots${full ? ' full' : ''}"><span>Joylar</span>${seatsHTML(t)}<b>${t.taken}/${t.cap}</b></div>
 <div class="foot"><span class="ulink" data-user="${t.ownerId}" role="link" tabindex="0">${avHTML(t.ownerId)}<span class="who" style="min-width:0"><b>${esc(g.name)}</b><small>Gid</small></span></span>
 ${own ? `<button class="glow done" type="button" data-go="t:${t.id}">Sizning e'loningiz</button>` : `<button class="glow ${b ? 'done' : ''}" type="button" data-bookopen="${t.id}">${b ? 'Band qilindi ✓' : 'Band qilish'}</button>`}</div>
 </div></article>`;
@@ -902,20 +907,30 @@ clearVid(); closeSheet(); await refresh(); show('sayohat'); setTimeout(() => { c
 $('#avFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (!f) return; if (!f.type.startsWith('image/')) { toast('Rasm fayl tanlang'); return; } shrink(f, 400, async src => {
 try { const url = await upload(src); const { error } = await sb.from('profiles').update({avatar_url:url}).eq('id', S.user.id); if (error) throw error; S.user.avatar_url = url; if (S.profiles[S.user.id]) S.profiles[S.user.id].avatar_url = url; rerender(); toast('Profil rasmi yangilandi'); } catch (er) { fail(er); }
 }); e.target.value = ''; });
+/* ---------- screen transitions (View Transitions API where the browser has it) ---------- */
+const canVT = () => !!document.startViewTransition && !reduce && !document.hidden;
+function nav(fn, from){
+if (!canVT()) { fn(); return; }
+if (from) from.style.viewTransitionName = 'hero';
+const tr = document.startViewTransition(() => { if (from) from.style.viewTransitionName = ''; fn(); const h = document.querySelector('section:not([hidden]) .dhero'); if (from && h) h.style.viewTransitionName = 'hero'; });
+tr.finished.finally(() => { $$('.dhero').forEach(h => h.style.viewTransitionName = ''); if (from) from.style.viewTransitionName = ''; });
+}
+let scrolledOn = false;
+addEventListener('scroll', () => { const on = scrollY > 12; if (on !== scrolledOn) { scrolledOn = on; document.body.classList.toggle('scrolled', on); } }, {passive:true});
 /* ---------- global clicks ---------- */
 let lastTap = {id:null, t:0};
 document.addEventListener('click', e => {
 const t = e.target;
-if (t.closest('[data-back]')) { if (t.closest('#v-user') && userBack) { const b = userBack; userBack = null; if (openItem(b)) return; } show(prevView); return; }
-const us = t.closest('[data-user]'); if (us) { e.preventDefault(); e.stopPropagation(); openUser(us.dataset.user); return; }
-const go = t.closest('[data-go]'); if (go) { openItem(go.dataset.go); return; }
+if (t.closest('[data-back]')) { nav(() => { if (t.closest('#v-user') && userBack) { const b = userBack; userBack = null; if (openItem(b)) return; } show(prevView); }); return; }
+const us = t.closest('[data-user]'); if (us) { e.preventDefault(); e.stopPropagation(); nav(() => openUser(us.dataset.user)); return; }
+const go = t.closest('[data-go]'); if (go) { nav(() => openItem(go.dataset.go)); return; }
 const ro = t.closest('[data-roll]'); if (ro) { openRoll(ro.dataset.roll); return; }
 const ar = t.closest('[data-arrive]'); if (ar) { toggleArrived(ar.dataset.arrive); return; }
 const si = t.closest('[data-slides] img'); if (si && cur) { openLightbox(cur.item.photos, [...si.parentElement.children].indexOf(si)); return; }
 const cart = t.closest('[data-cart]'); if (cart) { e.stopPropagation(); toggleCart(cart.dataset.cart); return; }
 const rc = t.closest('[data-receipt]'); if (rc) { e.stopPropagation(); openReceipt(rc.dataset.receipt); return; }
 const rx = t.closest('[data-rcancel]'); if (rx) { e.stopPropagation(); cancelRental(rx.dataset.rcancel); return; }
-const op = t.closest('[data-open]'); if (op && !t.closest('button')) { openItem(op.dataset.open); return; }
+const op = t.closest('[data-open]'); if (op && !t.closest('button')) { nav(() => openItem(op.dataset.open), op.querySelector('.photo, .gph')); return; }
 const bo = t.closest('[data-bookopen]'); if (bo) { if (openItem('t:' + bo.dataset.bookopen) && !cur.item.mine) openPay(); return; }
 const cx = t.closest('[data-cancel]'); if (cx) { cancelBooking(cx.dataset.cancel); return; }
 const lk = t.closest('[data-like]'); if (lk) { setLike(lk.dataset.like); return; }
@@ -938,7 +953,7 @@ else if (act === 'help') toast('Favqulodda holatda 112 raqamiga qo\'ng\'iroq qil
 else if (act === 'logout') ask('Akkauntdan chiqasizmi?', 'Qayta kirish uchun Telegram botdan yangi kod olasiz.', async () => { await sb.auth.signOut(); S.user = null; showAuth(); });
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-user]')) { e.stopPropagation(); openUser(e.target.dataset.user); return; } if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-open]')) openItem(e.target.dataset.open); if (e.key === 'Escape') closeSheet(); });
-$$('.pill-nav [data-v]').forEach(b => b.addEventListener('click', () => show(b.dataset.v)));
+$$('.pill-nav [data-v]').forEach(b => b.addEventListener('click', () => nav(() => show(b.dataset.v))));
 $('#filters').addEventListener('click', e => { const c = e.target.closest('button'); if (!c) return; filter = c.dataset.f; $$('#filters button').forEach(x => x.setAttribute('aria-pressed', x === c)); renderTours(); });
 $('#q').addEventListener('input', renderTours);
 $('#viewSw').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setHomeView(b.dataset.view); });
