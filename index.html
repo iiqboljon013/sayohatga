@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>sayohatga</title>
-<meta name="description" content="O'zbekiston tog'lari va o'rmonlariga sayohatlar, jihozlar ijarasi va sayohat lavhalari.">
+<title>sayohatga — O'zbekiston bo'ylab tog' sayohatlari, gidlar va jihozlar ijarasi</title>
+<meta name="description" content="sayohatga — O'zbekiston tog'lari va o'rmonlariga sayohatlar: Chimyon, Chorvoq, Zomin, Arslonbob. Gid bilan guruh sayohatlari, palatka va jihozlar ijarasi. Путешествия по горам Узбекистана. Hiking trips in Uzbekistan.">
+<meta name="keywords" content="sayohatga, sayohat, sayohatlar, tog' sayohati, gid, palatka ijarasi, Chimyon, Chorvoq, Zomin, O'zbekiston, путешествия Узбекистан, походы, hiking Uzbekistan">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://iiqboljon013.github.io/sayohatga/">
 <meta name="theme-color" content="#1F4D3A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -13,9 +16,14 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-512.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta property="og:title" content="sayohatga">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="sayohatga">
+<meta property="og:url" content="https://iiqboljon013.github.io/sayohatga/">
+<meta property="og:title" content="sayohatga — tog' sayohatlari va jihozlar ijarasi">
 <meta property="og:description" content="Pulni to'y-hashamga emas, sayohatga sarflang.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="https://iiqboljon013.github.io/sayohatga/icon-512.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"sayohatga","alternateName":["Sayohatga","sayohatga.uz"],"url":"https://iiqboljon013.github.io/sayohatga/","inLanguage":["uz","ru","en"],"description":"O'zbekiston tog'lari va o'rmonlariga sayohatlar, gidlar va jihozlar ijarasi."}</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://idfkofehlsqvynoivadk.supabase.co">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@700&display=swap">
 <link rel="stylesheet" href="style.css">
@@ -37,7 +45,7 @@
 <!-- registration -->
 <div id="auth" hidden>
   <div class="auth-in">
-    <div class="auth-logo">sayohat<b>ga</b></div>
+    <div class="authtop"><div class="auth-logo">sayohat<b>ga</b></div><div class="langsw" role="group" aria-label="Til"><button type="button" data-lang="uz">O'z</button><button type="button" data-lang="ru">Ру</button><button type="button" data-lang="en">En</button></div></div>
     <form id="authStep1" novalidate style="display:flex;flex-direction:column;gap:14px">
       <h1>Ro'yxatdan o'tish</h1>
       <p class="sub" style="font-size:14.5px">Tasdiqlash kodi Telegram'dagi @sayohatga_uz_bot orqali bepul yuboriladi.</p>
@@ -87,7 +95,9 @@
       <button type="button" data-f="O'rtacha" aria-pressed="false">O'rtacha</button>
       <button type="button" data-f="Qiyin" aria-pressed="false">Qiyin</button>
     </div>
+    <div class="viewsw rv" id="viewSw" role="group" aria-label="Ko'rinish"><button type="button" data-view="list" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Ro'yxat</button><button type="button" data-view="map" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Xarita</button></div>
     <div id="tours" style="display:flex;flex-direction:column;gap:16px"></div>
+    <div id="toursMap" class="map homemap" hidden></div>
     <div class="sec rv" style="margin-top:8px"><div><h2>Lavhalar</h2></div><button type="button" class="chip" data-act="photo" style="color:var(--dawn);border-color:rgba(242,166,90,.4)">+ Rasm joylash</button></div>
     <div id="feed" style="display:flex;flex-direction:column;gap:16px"></div>
   </section>
@@ -122,7 +132,7 @@
     <div class="sec rv"><div><h2 style="font-size:20px">Lavhalarim</h2></div><span class="sub" id="myCount"></span></div>
     <div id="myGrid"></div>
     <div class="menu rv">
-      <a href="#" data-act="lang"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></span><span><b>Til</b><small>O'zbekcha</small></span><span class="arr">›</span></a>
+      <a href="#" data-act="lang"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></span><span><b>Til</b><small>O'zbekcha · Русский · English</small></span><span class="arr">›</span></a>
       <a href="#" data-act="help"><span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg></span><span><b>Xavfsizlik va yordam</b><small>Favqulodda holatda: 112</small></span><span class="arr">›</span></a>
       <a href="#" data-act="logout"><span class="ic" style="color:var(--rose)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg></span><span><b>Chiqish</b><small>Akkauntdan chiqish</small></span><span class="arr">›</span></a>
     </div>
@@ -139,12 +149,13 @@
   <button class="opt" type="button" data-act="ijara"><span class="oi" style="background:rgba(242,166,90,.14);color:var(--dawn)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M7 8a5 5 0 0 1 10 0v12H7zM9 14h6M10 3h4"/></svg></span><span><b>Ijara</b><span>Jihozingizni ijaraga bering</span></span></button>
 </div>
 
-<div class="sheet" id="compose" hidden role="dialog" aria-label="Rasm joylash">
+<div class="sheet" id="compose" hidden role="dialog" aria-label="Rasm yoki video joylash">
   <span class="grab"></span>
-  <h2>Rasm joylash</h2>
+  <h2>Rasm yoki video joylash</h2>
   <form id="postForm" novalidate style="display:flex;flex-direction:column;gap:12px">
-    <label class="drop" for="pFile"><img id="pPrev" alt="Tanlangan rasm" hidden><span id="dropHint"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><b>Rasm tanlang</b><small>Telefon galereyasidan</small></span></label>
-    <input id="pFile" type="file" accept="image/*" hidden>
+    <label class="drop" for="pFile"><img id="pPrev" alt="Tanlangan rasm" hidden><span id="dropHint"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><b>Rasm yoki video tanlang</b><small>Telefon galereyasidan · video 50 MB gacha</small></span></label>
+    <video id="pVid" class="vprev" controls playsinline muted hidden></video>
+    <input id="pFile" type="file" accept="image/*,video/*" hidden>
     <div class="fld"><label for="pPlace">Qayerda olingan</label><input id="pPlace" placeholder="Katta Chimyon" autocomplete="off"></div>
     <div class="fld"><label for="pCap">Izoh</label><input id="pCap" placeholder="Tepaga 4 soatda chiqdik!" autocomplete="off"></div>
     <p class="err" id="pErr" hidden></p>
@@ -161,10 +172,13 @@
     <div class="fld"><label for="eName">Sayohat nomi *</label><input id="eName" placeholder="Katta Chimyon cho'qqisi" autocomplete="off"></div>
     <div class="fld"><label for="ePlace">Joy (viloyat, tuman) *</label><input id="ePlace" placeholder="Toshkent viloyati, Bo'stonliq" autocomplete="off"></div>
     <div class="fld"><label for="eDesc">Tavsif *</label><textarea id="eDesc" placeholder="Yo'l qanday, nimani ko'ramiz, kimlar uchun mos"></textarea></div>
-    <div class="fld"><label for="eQ">Xaritada qidirish uchun nom</label><input id="eQ" placeholder="Katta Chimyon" autocomplete="off"><small class="hint">Bo'sh qolsa, sayohat nomi ishlatiladi.</small></div>
+    <span class="fsec">Xaritadagi joyi</span>
+    <div class="fld"><label for="eQ">Manzil yoki joy nomi</label><div class="georow"><input id="eQ" placeholder="Katta Chimyon, Bo'stonliq" autocomplete="off"><button type="button" class="geobtn" id="eGeo">Topish</button></div><small class="hint">Joy nomini yozsangiz, xaritadan o'zimiz topib belgilaymiz. Noto'g'ri bo'lsa, xaritani bosib yoki nuqtani surib to'g'rilang.</small></div>
+    <div class="map formmap" id="eMap"></div>
+    <p class="addr" id="eAddr" hidden></p>
     <span class="fsec">Ketish va qaytish</span>
-    <div class="two"><div class="fld"><label for="eDepDate">Ketish sanasi *</label><input id="eDepDate" type="date"></div><div class="fld"><label for="eDepTime">Ketish vaqti *</label><input id="eDepTime" type="time"></div></div>
-    <div class="two"><div class="fld"><label for="eRetDate">Qaytish sanasi *</label><input id="eRetDate" type="date"></div><div class="fld"><label for="eRetTime">Qaytish vaqti *</label><input id="eRetTime" type="time"></div></div>
+    <div class="two"><div class="fld"><label for="eDepDate">Ketish sanasi *</label><div class="dwrap"><input id="eDepDate" type="date"><span class="dshow" id="eDepDateShow" aria-hidden="true"></span></div></div><div class="fld"><label for="eDepTime">Ketish vaqti *</label><input id="eDepTime" type="time"></div></div>
+    <div class="two"><div class="fld"><label for="eRetDate">Qaytish sanasi *</label><div class="dwrap"><input id="eRetDate" type="date"><span class="dshow" id="eRetDateShow" aria-hidden="true"></span></div></div><div class="fld"><label for="eRetTime">Qaytish vaqti *</label><input id="eRetTime" type="time"></div></div>
     <div class="fld"><label for="eMeet">Yig'ilish joyi *</label><input id="eMeet" placeholder="Chorsu metro" autocomplete="off"></div>
     <div class="fld"><label for="eLvl">Qiyinlik *</label><select id="eLvl"><option value="Oson">Oson</option><option value="O'rtacha" selected>O'rtacha</option><option value="Qiyin">Qiyin</option></select></div>
     <div class="fld"><label for="eNeeds">Nimalar kerak</label><input id="eNeeds" placeholder="Suv, issiq kiyim, fonar" autocomplete="off"><small class="hint">Vergul bilan ajrating.</small></div>
@@ -233,6 +247,14 @@
   <p class="notice" id="shareNote" hidden>Bu e'lon hozircha faqat sizning qurilmangizda saqlangan. Havolani ochgan odam uni ko'rishi uchun ilovaning serveri kerak bo'ladi. Buni haqiqiy ilovada qilamiz.</p>
 </div>
 
+<div class="sheet" id="langSheet" hidden role="dialog" aria-label="Til">
+  <span class="grab"></span>
+  <h2>Tilni tanlang</h2>
+  <button class="opt langopt" type="button" data-lang="uz"><span class="oi flag">UZ</span><span><b>O'zbekcha</b></span></button>
+  <button class="opt langopt" type="button" data-lang="ru"><span class="oi flag">RU</span><span><b>Русский</b></span></button>
+  <button class="opt langopt" type="button" data-lang="en"><span class="oi flag">EN</span><span><b>English</b></span></button>
+</div>
+
 <div class="sheet" id="ask" hidden role="dialog" aria-label="Tasdiqlash">
   <span class="grab"></span>
   <h2 id="askTitle"></h2>
@@ -258,7 +280,10 @@
   </div>
 </nav>
 
+<noscript><p style="padding:24px">sayohatga — O'zbekiston tog'lari va o'rmonlariga sayohatlar, gidlar va jihozlar ijarasi. Ilovadan foydalanish uchun JavaScript'ni yoqing.</p></noscript>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

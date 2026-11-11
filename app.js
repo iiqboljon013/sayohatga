@@ -10,12 +10,12 @@ const $$ = s => [...document.querySelectorAll(s)];
 document.documentElement.classList.add('anim');
 const SITE = location.origin + location.pathname;
 const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = n => Math.round(n).toLocaleString('ru-RU').replace(/\s/g, ' ') + " so'm";
-const MON = ['YAN','FEV','MAR','APR','MAY','IYN','IYL','AVG','SEN','OKT','NOY','DEK'];
-const MONF = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];
-const dShort = d => { const [, m, day] = d.split('-'); return `${+day}-${MON[+m - 1]}`; };
-const dLong = d => { const [, m, day] = d.split('-'); return `${+day}-${MONF[+m - 1]}`; };
-const ago = ts => { const s = (Date.now() - ts) / 1000; if (s < 60) return 'hozirgina'; if (s < 3600) return Math.floor(s / 60) + ' daqiqa oldin'; if (s < 86400) return Math.floor(s / 3600) + ' soat oldin'; return Math.floor(s / 86400) + ' kun oldin'; };
+const fmt = n => Math.round(n).toLocaleString('ru-RU').replace(/\s/g, ' ') + ' ' + I18N.cur();
+/* "2026-11-18" -> "18 noyabr" / "18 ноября" / "18 November" */
+const dLong = d => { if (!d) return ''; const [, m, day] = d.split('-'); return `${+day} ${I18N.months()[+m - 1]}`; };
+const dShort = dLong;
+const ago = ts => { const s = (Date.now() - ts) / 1000; if (s < 60) return I18N.ago(0, 'now'); if (s < 3600) return I18N.ago(Math.floor(s / 60), 'm'); if (s < 86400) return I18N.ago(Math.floor(s / 3600), 'h'); return I18N.ago(Math.floor(s / 86400), 'd'); };
+const isVideo = u => /\.(mp4|mov|webm|m4v)(\?|$)/i.test(String(u || ''));
 const initials = n => String(n || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 const logoPh = (cls = '') => `<div class="logoph ${cls}"><span>sayohat<b>ga</b></span></div>`;
 const TZF = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Tashkent', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
@@ -29,6 +29,7 @@ const bigHeart = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true
 const cmtIc = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>';
 const sendIc = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 3 10l7 3 3 7z"/><path d="M10 13l11-10"/></svg>';
 const trashIc = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+const playIc = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>';
 let tt; function toast(m){ $('#toastTxt').textContent = m; $('#toast').hidden = false; clearTimeout(tt); tt = setTimeout(() => $('#toast').hidden = true, 2600); }
 const fail = (e, msg) => { console.error(e); toast(msg || (navigator.onLine ? 'Xatolik yuz berdi. Qaytadan urinib ko\'ring.' : 'Internet aloqasi yo\'q.')); };
 /* ---------- state (server data cached in memory) ---------- */
@@ -43,6 +44,12 @@ return {name:`${p.first_name} ${p.last_name === '-' ? '' : p.last_name}`.trim(),
 }
 const avHTML = (id, size = 36) => { const p = person(id); return `<span class="av" style="background:${p.col};width:${size}px;height:${size}px">${p.avatar ? `<img src="${esc(p.avatar)}" alt="">` : esc(initials(p.name))}</span>`; };
 const keyType = {t:'tour', r:'rental', p:'post'};
+/* map_query holds either plain text or {"q","lat","lng","addr"} JSON (no DB migration needed) */
+function parseGeo(raw, name){
+const s = String(raw || '');
+if (s.startsWith('{')) { try { const o = JSON.parse(s); if (isFinite(o.lat) && isFinite(o.lng)) return {q:o.q || name, lat:+o.lat, lng:+o.lng, addr:o.addr || ''}; return {q:o.q || name, lat:null, lng:null, addr:''}; } catch (_) {} }
+return {q:s || name, lat:null, lng:null, addr:''};
+}
 async function loadAll(){
 const q = await Promise.all([
 sb.from('tours').select('*').order('depart_at', {ascending:true}),
@@ -61,8 +68,8 @@ S.profiles = Object.fromEntries(profiles.map(p => [p.id, p]));
 if (S.user && S.profiles[S.user.id]) Object.assign(S.user, S.profiles[S.user.id]);
 const tk = Object.fromEntries(taken.map(x => [x.tour_id, x.taken]));
 const cm = Object.fromEntries(cards.map(x => [x.tour_id, x.card_masked]));
-S.tours = tours.map(x => { const dep = tz(x.depart_at), ret = tz(x.return_at); return {
-id:x.id, ownerId:x.owner_id, card:cm[x.id] || '', name:x.name, place:x.place, q:x.map_query || x.name, lvl:x.level, p:x.price, cap:x.capacity, meet:x.meet_point,
+S.tours = tours.map(x => { const dep = tz(x.depart_at), ret = tz(x.return_at), geo = parseGeo(x.map_query, x.name); return {
+id:x.id, ownerId:x.owner_id, card:cm[x.id] || '', name:x.name, place:x.place, q:geo.q, lat:geo.lat, lng:geo.lng, addr:geo.addr, lvl:x.level, p:x.price, cap:x.capacity, meet:x.meet_point,
 depDate:dep.d, depTime:dep.t, retDate:ret.d, retTime:ret.t, desc:x.description, needs:x.needs || [], photos:x.photos || [], taken:tk[x.id] || 0,
 participants: bookings.filter(b => b.tour_id === x.id && b.status !== 'cancelled' && (!S.user || b.user_id !== S.user.id)).map(b => ({uid:b.user_id, name:person(b.user_id).name, n:b.seats, m:b.pay_method, status:b.status, ts:Date.parse(b.created_at)})),
 mine: S.user ? (bookings.find(b => b.tour_id === x.id && b.user_id === S.user.id && b.status !== 'cancelled') || null) : null }; });
@@ -101,6 +108,7 @@ const list = S.tours.filter(t => (filter === 'all' || t.lvl === filter) && (!q |
 $('#tours').innerHTML = !S.loaded ? `<p class="empty">Yuklanmoqda…</p>` : list.length ? list.map(tourCard).join('')
 : S.tours.length ? `<p class="empty">Bunday sayohat topilmadi. Boshqa joy nomini yozib ko'ring.</p>` : `<p class="empty">Hali e'lon yo'q. Birinchi sayohatni pastdagi «+» tugmasi orqali joylang.</p>`;
 observe($('#tours'));
+if (homeView === 'map') renderHomeMap();
 }
 /* ---------- rentals ---------- */
 const rentThumb = r => r.photos.length ? `<img src="${esc(r.photos[0])}" alt="${esc(r.name)}" loading="lazy">` : logoPh('md');
@@ -120,12 +128,14 @@ rerender();
 const likes = p => S.likes.filter(l => l.post_id === p.id).length;
 const liked = p => !!(S.user && S.likes.some(l => l.post_id === p.id && l.user_id === S.user.id));
 const ccount = key => (S.comments[key] || []).length;
-const media = p => `<img src="${esc(p.src)}" alt="${esc(p.cap || p.place)}" loading="lazy">`;
+const media = (p, grid) => isVideo(p.src)
+? (grid ? `<video src="${esc(p.src)}#t=0.1" muted playsinline preload="metadata"></video><i class="vtag">${playIc}</i>` : `<video src="${esc(p.src)}#t=0.1" controls playsinline preload="metadata"></video>`)
+: `<img src="${esc(p.src)}" alt="${esc(p.cap || p.place)}" loading="lazy">`;
 function postCard(p){
 const who = person(p.uid);
 return `<article class="post rv" id="post-${p.id}">
 <div class="ph">${avHTML(p.uid)}<span style="min-width:0"><b>${esc(who.name)}</b><small>${esc(p.place)} · ${ago(p.ts)}</small></span>${isMine(p) ? `<button class="xdel" type="button" data-delpost="${p.id}" aria-label="Rasmni o'chirish">${trashIc}</button>` : ''}</div>
-<div class="pimg" data-tap="${p.id}">${media(p)}<span class="burst">${bigHeart}</span></div>
+<div class="pimg${isVideo(p.src) ? ' isvid' : ''}" data-tap="${p.id}">${media(p)}<span class="burst">${bigHeart}</span></div>
 <div class="pact"><button type="button" class="${liked(p) ? 'liked' : ''}" data-like="${p.id}" aria-pressed="${liked(p)}" aria-label="Yoqdi">${heartIc}<span>${likes(p)}</span></button><button type="button" data-cmts="p-${p.id}" aria-label="Izohlar">${cmtIc}<span>${ccount('p-' + p.id)}</span></button><button type="button" data-share="p-${p.id}" aria-label="Ulashish">${sendIc}</button></div>
 ${p.cap ? `<p class="pcap"><b>${esc(who.name.split(' ')[0])}</b>${esc(p.cap)}</p>` : '<div style="height:12px"></div>'}
 </article>`;
@@ -176,15 +186,15 @@ const rents = S.rentals.filter(isMine);
 $('#myRents').innerHTML = rents.length ? rents.map(r => `<button type="button" class="mytour" data-go="r:${r.id}"><span class="thumb">${r.photos.length ? `<img src="${esc(r.photos[0])}" alt="">` : logoPh('sm')}</span><span style="min-width:0"><b>${esc(r.name)}</b><small>${fmt(r.p)} / kun · ${esc(r.where)}</small></span><span style="margin-left:auto;color:var(--tx-3)">›</span></button>`).join('') : `<p class="sub">Hali jihoz joylamadingiz.</p>`;
 const posts = S.posts.filter(isMine);
 $('#myCount').textContent = posts.length ? posts.length + ' ta rasm' : '';
-$('#myGrid').innerHTML = posts.length ? `<div class="grid3">${posts.map(p => `<div class="cell">${media(p)}<span>${heartIc.replace('width="24" height="24"', 'width="14" height="14"')}${likes(p)}</span></div>`).join('')}</div>`
+$('#myGrid').innerHTML = posts.length ? `<div class="grid3">${posts.map(p => `<div class="cell">${media(p, true)}<span>${heartIc.replace('width="24" height="24"', 'width="14" height="14"')}${likes(p)}</span></div>`).join('')}</div>`
 : `<div class="empty-cta"><span>Hali rasm joylamadingiz.</span><button type="button" class="glow" data-act="photo" style="margin:0">Rasm joylash</button></div>`;
 }
 /* ---------- photos ---------- */
 function shrink(f, max, cb){ const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', .82)); }; img.onerror = () => toast('Rasmni ochib bo\'lmadi'); img.src = r.result; }; r.readAsDataURL(f); }
-async function upload(dataUrl){
-const blob = await (await fetch(dataUrl)).blob();
-const path = `${S.user.id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-const { error } = await sb.storage.from('photos').upload(path, blob, {contentType:'image/jpeg', cacheControl:'31536000'});
+async function upload(dataUrl){ return uploadBlob(await (await fetch(dataUrl)).blob(), 'jpg', 'image/jpeg'); }
+async function uploadBlob(blob, ext, type){
+const path = `${S.user.id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+const { error } = await sb.storage.from('photos').upload(path, blob, {contentType:type, cacheControl:'31536000'});
 if (error) throw error;
 return sb.storage.from('photos').getPublicUrl(path).data.publicUrl;
 }
@@ -234,6 +244,118 @@ return `<svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" role="im
 <g class="pin"><path d="M296 72 C288 60 282 52 282 44 a14 14 0 0 1 28 0 c0 8 -6 16 -14 28z" fill="#F2A65A"/><circle cx="296" cy="44" r="5" fill="#0A1611"/></g>
 <text x="296" y="98" text-anchor="middle" fill="#F1F5F2" font-size="12.5" font-family="Onest,sans-serif" font-weight="700">${esc(t.q)}</text></svg>`;
 }
+/* ---------- real map (Leaflet + OpenStreetMap) and automatic address lookup ---------- */
+const pinIc = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none;color:var(--dawn)"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+const UZ_CENTER = [41.2, 66.0];
+const hasMap = () => typeof window.L !== 'undefined';
+const tileLayer = () => L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom:19, subdomains:'abcd', attribution:'&copy; OpenStreetMap, &copy; CARTO'});
+const pinIcon = () => L.divIcon({className:'sgpin', html:'<span></span>', iconSize:[30, 40], iconAnchor:[15, 38], popupAnchor:[0, -34]});
+const mapLinks = t => {
+const ll = t.lat != null ? `${t.lat},${t.lng}` : null;
+const y = ll ? `https://yandex.uz/maps/?pt=${t.lng},${t.lat}&z=14&l=map` : `https://yandex.uz/maps/?text=${encodeURIComponent(t.q + ', ' + t.place)}`;
+const g = ll ? `https://www.google.com/maps/search/?api=1&query=${ll}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.q + ', ' + t.place)}`;
+return `<a href="${y}" target="_blank" rel="noopener">Yandex xarita</a><a href="${g}" target="_blank" rel="noopener">Google Maps</a>`;
+};
+/* Nominatim: free OSM geocoder, max 1 request per second */
+const geoCache = {}; let geoLast = 0;
+async function geoFetch(url){
+const gap = geoLast + 1100 - Date.now(); if (gap > 0) await new Promise(r => setTimeout(r, gap));
+geoLast = Date.now();
+const r = await fetch(url, {headers:{'Accept':'application/json'}}); if (!r.ok) throw new Error('geo ' + r.status); return r.json();
+}
+async function geocode(q){
+q = String(q || '').trim(); if (q.length < 2) return null;
+const k = I18N.lang + '|' + q.toLowerCase(); if (k in geoCache) return geoCache[k];
+try {
+const j = await geoFetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=uz&accept-language=${I18N.lang}&q=${encodeURIComponent(q)}`);
+const x = j && j[0]; geoCache[k] = x ? {lat:+x.lat, lng:+x.lon, addr:x.display_name} : null;
+} catch (e) { console.warn(e); return null; }
+return geoCache[k];
+}
+async function reverseGeo(lat, lng){
+try { const j = await geoFetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&accept-language=${I18N.lang}&lat=${lat}&lon=${lng}`); return (j && j.display_name) || ''; } catch (_) { return ''; }
+}
+/* tries several spellings of what the guide typed, most specific first */
+async function smartGeocode(q, name, place){
+const tries = [];
+const add = s => { s = String(s || '').trim().replace(/\s+/g, ' '); if (s.length > 1 && !tries.some(x => x.toLowerCase() === s.toLowerCase())) tries.push(s); };
+add(q && place ? q + ', ' + place : ''); add(q); add(name && place ? name + ', ' + place : ''); add(name);
+add(String(name || '').replace(/(cho'qqisi|chuqqisi|sharsharasi|sharshara|ko'li|tog'i|darasi|sayohati|sayohat|safari|tur|yurish)/gi, ''));
+add(place);
+for (const s of tries.slice(0, 5)) { const g = await geocode(s); if (g) return g; }
+return null;
+}
+let detailMap = null;
+async function showTourMap(t){
+const box = $('#tMap'); if (!box) return;
+if (detailMap) { try { detailMap.remove(); } catch (_) {} detailMap = null; }
+let g = t.lat != null ? {lat:t.lat, lng:t.lng, addr:t.addr} : null;
+if (!g) g = await smartGeocode(t.q, t.name, t.place);
+if (!cur || cur.item.id !== t.id || !document.body.contains(box)) return;
+if (!g || !hasMap()) { box.innerHTML = mapSvg(t); if (!g) { const a = $('#tAddr'); a.hidden = false; a.querySelector('span').textContent = t.place; } return; }
+box.innerHTML = '';
+detailMap = L.map(box, {zoomControl:true, scrollWheelZoom:false, attributionControl:true}).setView([g.lat, g.lng], 13);
+tileLayer().addTo(detailMap);
+L.marker([g.lat, g.lng], {icon:pinIcon()}).addTo(detailMap);
+if (!t.addr && g.addr) { const a = $('#tAddr'); a.hidden = false; a.querySelector('span').textContent = g.addr; }
+if (t.lat == null) $('#tLinks').innerHTML = mapLinks({...t, lat:g.lat, lng:g.lng});
+setTimeout(() => detailMap && detailMap.invalidateSize(), 200);
+}
+/* map of all trips on the home screen */
+let homeMap = null, homeLayer = null, homeView = 'list';
+async function renderHomeMap(){
+const box = $('#toursMap'); if (!box || homeView !== 'map') return;
+if (!hasMap()) { box.innerHTML = `<p class="empty">Xarita yuklanmadi. Internetni tekshiring.</p>`; return; }
+if (!homeMap) { homeMap = L.map(box, {scrollWheelZoom:false}).setView(UZ_CENTER, 6); tileLayer().addTo(homeMap); homeLayer = L.layerGroup().addTo(homeMap); }
+setTimeout(() => homeMap.invalidateSize(), 100);
+homeLayer.clearLayers();
+const pts = [];
+for (const t of S.tours) {
+let g = t.lat != null ? {lat:t.lat, lng:t.lng} : null;
+if (!g) g = await smartGeocode(t.q, t.name, t.place);
+if (!g || homeView !== 'map') continue;
+pts.push([g.lat, g.lng]);
+L.marker([g.lat, g.lng], {icon:pinIcon()}).addTo(homeLayer).bindPopup(`<div class="mpop"><b>${esc(t.name)}</b><span>${dLong(t.depDate)} · ${fmt(t.p)}</span><button type="button" data-go="t:${t.id}">${I18N.t('Ochish')}</button></div>`);
+}
+if (pts.length) homeMap.fitBounds(pts, {padding:[40, 40], maxZoom:11});
+}
+function setHomeView(v){
+homeView = v;
+$$('#viewSw button').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === v));
+$('#tours').hidden = v === 'map'; $('#toursMap').hidden = v !== 'map';
+if (v === 'map') renderHomeMap();
+}
+/* the picker inside the "E'lon joylash" form */
+let formMap = null, formPin = null, geoPick = null, geoBusy = false;
+function initFormMap(){
+if (!hasMap()) { $('#eMap').hidden = true; return; }
+if (!formMap) {
+formMap = L.map('eMap', {scrollWheelZoom:false}).setView(UZ_CENTER, 6);
+tileLayer().addTo(formMap);
+formMap.on('click', e => placePin(e.latlng.lat, e.latlng.lng, true));
+}
+setTimeout(() => formMap.invalidateSize(), 250);
+}
+async function placePin(lat, lng, manual, addr){
+if (!formMap) return;
+if (!formPin) { formPin = L.marker([lat, lng], {icon:pinIcon(), draggable:true}).addTo(formMap); formPin.on('dragend', () => { const p = formPin.getLatLng(); placePin(p.lat, p.lng, true); }); }
+else formPin.setLatLng([lat, lng]);
+formMap.setView([lat, lng], Math.max(formMap.getZoom(), 13));
+geoPick = {lat:+lat.toFixed(6), lng:+lng.toFixed(6), addr:addr || '', manual};
+setGeoHint(addr || I18N.t('Manzil aniqlanmoqda…'), 'ok');
+if (!addr) { const a = await reverseGeo(lat, lng); if (geoPick && geoPick.lat === +lat.toFixed(6)) { geoPick.addr = a; setGeoHint(a || I18N.t('Nuqta belgilandi'), 'ok'); } }
+}
+function setGeoHint(text, kind){ const h = $('#eAddr'); h.hidden = !text; h.className = 'addr ' + (kind || ''); h.innerHTML = text ? `${pinIc}<span></span>` : ''; if (text) h.querySelector('span').textContent = text; }
+async function autoGeo(force){
+if (geoBusy || (geoPick && geoPick.manual && !force)) return;
+const v = id => $('#' + id).value.trim();
+if (!v('eQ') && !v('eName') && !v('ePlace')) { if (force) setGeoHint(I18N.t('Avval joy nomini yozing.'), 'bad'); return; }
+geoBusy = true; $('#eGeo').disabled = true; setGeoHint(I18N.t('Xaritadan qidirilmoqda…'), '');
+const g = await smartGeocode(v('eQ'), v('eName'), v('ePlace'));
+geoBusy = false; $('#eGeo').disabled = false;
+if (g) placePin(g.lat, g.lng, false, g.addr);
+else setGeoHint(I18N.t('Xaritadan topilmadi. Xaritani bosib, joyni o\'zingiz belgilang.'), 'bad');
+}
 function renderTour(){
 const t = cur.item, free = t.cap - t.taken, own = isMine(t), g = person(t.ownerId), n = t.photos.length;
 const collected = t.participants.reduce((s, x) => s + x.n * t.p, 0);
@@ -265,12 +387,15 @@ ${own ? `
 ${t.needs.length ? `<h2 class="dh">Nimalar kerak</h2><div class="needs">${t.needs.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
 <h2 class="dh">Joylashuv</h2>
 <div class="loc-line"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 3 3 10.5l7.5 3 3 7.5z"/></svg>${esc(t.place)}</div>
-<div class="map">${mapSvg(t)}<a class="open" href="https://yandex.uz/maps/?text=${encodeURIComponent(t.q)}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Xaritada ochish</a></div>
+<div class="map" id="tMap"><div class="maploading">Xarita yuklanmoqda…</div></div>
+<p class="addr" id="tAddr"${t.addr ? '' : ' hidden'}>${pinIc}<span>${esc(t.addr)}</span></p>
+<div class="maplinks" id="tLinks">${mapLinks(t)}</div>
 <h2 class="dh">Gid</h2>
 <div class="gcard">${avHTML(t.ownerId, 48)}<span><b>${esc(g.name)}</b><small>Gid</small></span></div>
 ${cmtPreview(key)}
 <div style="height:20px"></div>`;
 wireSlides(el);
+showTourMap(t);
 if (own) {
 $('#tFile').onchange = e => { const list = t.photos.slice(); addPhotos(list, [...(e.target.files || [])], async () => {
 toast('Rasmlar yuklanmoqda…');
@@ -365,9 +490,11 @@ window.addEventListener('hashchange', () => { if (S.user) route(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.user && S.loaded) refresh(); });
 /* ---------- sheets ---------- */
 const plus = $('#plus');
-const SHEETS = ['#sheet', '#compose', '#newTour', '#newRent', '#pay', '#cmts', '#share', '#ask'];
-function openSheet(id){ SHEETS.forEach(s => $(s).hidden = s !== id); $('#scrim').hidden = false; $('#buybar').hidden = true; plus.classList.add('open'); plus.setAttribute('aria-expanded', 'true'); $(id).scrollTop = 0; }
-function closeSheet(){ SHEETS.forEach(s => $(s).hidden = true); $('#scrim').hidden = true; plus.classList.remove('open'); plus.setAttribute('aria-expanded', 'false'); if (cur) updateBuy(); }
+const SHEETS = ['#sheet', '#compose', '#newTour', '#newRent', '#pay', '#cmts', '#share', '#ask', '#langSheet'];
+/* while a form is open the bottom menu is hidden, so it can never cover the submit button */
+function openSheet(id){ SHEETS.forEach(s => $(s).hidden = s !== id); $('#scrim').hidden = false; $('#buybar').hidden = true; document.body.classList.add('sheet-open'); plus.classList.add('open'); plus.setAttribute('aria-expanded', 'true'); $(id).scrollTop = 0; }
+function closeSheet(){ SHEETS.forEach(s => $(s).hidden = true); $('#scrim').hidden = true; document.body.classList.remove('sheet-open'); plus.classList.remove('open'); plus.setAttribute('aria-expanded', 'false'); if (cur) updateBuy(); }
+SHEETS.forEach(s => { const b = document.createElement('button'); b.type = 'button'; b.className = 'xclose'; b.setAttribute('aria-label', 'Yopish'); b.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>'; b.addEventListener('click', closeSheet); $(s).prepend(b); });
 plus.addEventListener('click', () => SHEETS.some(s => !$(s).hidden) ? closeSheet() : openSheet('#sheet'));
 $('#scrim').addEventListener('click', closeSheet);
 let askCb = null;
@@ -462,12 +589,19 @@ const d = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
 if (!$('#eDepDate').value) $('#eDepDate').value = d;
 if (!$('#eRetDate').value) $('#eRetDate').value = d;
 draft = []; $('#eThumbs').innerHTML = thumbsHTML(draft, 'data-ddel', 'eFile'); $('#eErr').hidden = true;
-openSheet('#newTour');
+geoPick = null; if (formPin) { formPin.remove(); formPin = null; } setGeoHint('');
+openSheet('#newTour'); paintDates(); initFormMap();
 }
+/* date fields show "18 noyabr" instead of the phone's 18.11.26 format */
+function paintDates(){ ['eDepDate', 'eRetDate'].forEach(id => { const i = $('#' + id), sp = $('#' + id + 'Show'); if (sp) sp.textContent = i.value ? dLong(i.value) + ' ' + i.value.slice(0, 4) : I18N.t('Sanani tanlang'); }); }
+['eDepDate', 'eRetDate'].forEach(id => { ['input', 'change'].forEach(ev => $('#' + id).addEventListener(ev, () => { if (id === 'eDepDate' && $('#eRetDate').value < $('#eDepDate').value) $('#eRetDate').value = $('#eDepDate').value; paintDates(); })); });
+$('#eGeo').addEventListener('click', () => autoGeo(true));
+['eQ', 'eName', 'ePlace'].forEach(id => $('#' + id).addEventListener('change', () => { if (id === 'eQ' && geoPick) geoPick.manual = false; autoGeo(); }));
 $('#eFile').addEventListener('change', e => { addPhotos(draft, [...(e.target.files || [])], () => $('#eThumbs').innerHTML = thumbsHTML(draft, 'data-ddel', 'eFile')); e.target.value = ''; });
 $('#eThumbs').addEventListener('click', e => { const b = e.target.closest('[data-ddel]'); if (!b) return; draft.splice(+b.dataset.ddel, 1); $('#eThumbs').innerHTML = thumbsHTML(draft, 'data-ddel', 'eFile'); });
 $('#eCard').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); });
 document.addEventListener('input', e => { if (e.target.classList) e.target.classList.remove('bad'); });
+function showErr(sel, errs){ const el = $(sel); el.innerHTML = errs.map(x => `<span style="display:block">${esc(x)}</span>`).join(''); el.hidden = false; }
 function validate(form, req){
 const v = id => $('#' + id).value.trim();
 form.querySelectorAll('.bad').forEach(x => x.classList.remove('bad'));
@@ -482,17 +616,19 @@ if (card.length !== 16) { $('#eCard').classList.add('bad'); errs.push('Karta raq
 if (v('eDepDate') && v('eDepTime') && v('eRetDate') && v('eRetTime') && (v('eRetDate') + v('eRetTime')) <= (v('eDepDate') + v('eDepTime'))) { $('#eRetDate').classList.add('bad'); $('#eRetTime').classList.add('bad'); errs.push('Qaytish vaqti ketishdan keyin bo\'lishi kerak.'); }
 if (v('ePrice') && +v('ePrice') < 1000) { $('#ePrice').classList.add('bad'); errs.push('Narx kamida 1 000 so\'m bo\'lsin.'); }
 if (v('eCap') && (+v('eCap') < 1 || +v('eCap') > 60)) { $('#eCap').classList.add('bad'); errs.push('Guruh 1–60 kishi bo\'lishi mumkin.'); }
-if (errs.length) { $('#eErr').textContent = errs.join(' '); $('#eErr').hidden = false; const f = e.target.querySelector('.bad'); if (f) f.focus(); return; }
+if (errs.length) { showErr('#eErr', errs); const f = e.target.querySelector('.bad'); if (f) f.focus(); return; }
 const btn = e.target.querySelector('button[type=submit]'); busy(btn, true, 'Joylanmoqda…');
 try {
+if (!geoPick) { const g = await Promise.race([smartGeocode(v('eQ'), v('eName'), v('ePlace')), new Promise(r => setTimeout(() => r(null), 6000))]); if (g) geoPick = {lat:g.lat, lng:g.lng, addr:g.addr}; }
+const mq = geoPick ? JSON.stringify({q:v('eQ') || v('eName'), lat:geoPick.lat, lng:geoPick.lng, addr:geoPick.addr || ''}) : (v('eQ') || null);
 const photos = []; for (const d of draft) photos.push(await upload(d));
-const { data, error } = await sb.from('tours').insert({owner_id:S.user.id, name:v('eName'), place:v('ePlace'), map_query:v('eQ') || null, description:v('eDesc'), level:$('#eLvl').value,
+const { data, error } = await sb.from('tours').insert({owner_id:S.user.id, name:v('eName'), place:v('ePlace'), map_query:mq, description:v('eDesc'), level:$('#eLvl').value,
 price:Math.round(+v('ePrice')), capacity:Math.round(+v('eCap')), meet_point:v('eMeet'), depart_at:`${v('eDepDate')}T${v('eDepTime')}:00+05:00`, return_at:`${v('eRetDate')}T${v('eRetTime')}:00+05:00`,
 needs:v('eNeeds') ? v('eNeeds').split(',').map(x => x.trim()).filter(Boolean) : [], photos}).select().single();
 if (error) throw error;
 const { error: e2 } = await sb.from('tour_payouts').insert({tour_id:data.id, card_number:card, card_holder:v('eHolder')});
 if (e2) throw e2;
-e.target.reset(); draft = []; closeSheet(); await refresh(); openItem('t:' + data.id); toast('E\'lon joylandi');
+e.target.reset(); draft = []; geoPick = null; closeSheet(); await refresh(); openItem('t:' + data.id); toast('E\'lon joylandi');
 } catch (er) { fail(er); } finally { busy(btn, false); }
 });
 /* ---------- new rental ---------- */
@@ -504,7 +640,7 @@ $('#rentForm').addEventListener('submit', async e => {
 e.preventDefault();
 const {v, errs} = validate(e.target, [['rName','jihoz nomi'],['rPrice','narx'],['rWhere','qayerdan olinishi']]);
 if (v('rPrice') && +v('rPrice') < 1000) { $('#rPrice').classList.add('bad'); errs.push('Narx kamida 1 000 so\'m bo\'lsin.'); }
-if (errs.length) { $('#rErr').textContent = errs.join(' '); $('#rErr').hidden = false; return; }
+if (errs.length) { showErr('#rErr', errs); return; }
 const btn = e.target.querySelector('button[type=submit]'); busy(btn, true, 'Joylanmoqda…');
 try {
 const photos = []; for (const d of rdraft) photos.push(await upload(d));
@@ -515,17 +651,28 @@ e.target.reset(); rdraft = []; closeSheet(); await refresh(); openItem('r:' + da
 });
 /* ---------- new post ---------- */
 let pending = null;
-function openCompose(){ pending = null; $('#postForm').reset(); $('#pPrev').hidden = true; $('#dropHint').hidden = false; $('#pErr').hidden = true; openSheet('#compose'); }
-$('#pFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (!f) return; if (!f.type.startsWith('image/')) { $('#pErr').textContent = 'Bu fayl rasm emas.'; $('#pErr').hidden = false; return; } shrink(f, 1280, src => { pending = src; $('#pPrev').src = src; $('#pPrev').hidden = false; $('#dropHint').hidden = true; $('#pErr').hidden = true; }); });
+const MAX_VIDEO = 50 * 1024 * 1024;
+function clearVid(){ const v = $('#pVid'); if (v.src) { try { URL.revokeObjectURL(v.src); } catch (_) {} } v.removeAttribute('src'); v.hidden = true; }
+function openCompose(){ pending = null; $('#postForm').reset(); $('#pPrev').hidden = true; clearVid(); $('#dropHint').hidden = false; $('#pErr').hidden = true; openSheet('#compose'); }
+$('#pFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (!f) return; $('#pErr').hidden = true;
+const vid = f.type.startsWith('video/') || /\.(mp4|mov|webm|m4v)$/i.test(f.name);
+if (vid) {
+if (f.size > MAX_VIDEO) { $('#pErr').textContent = 'Video 50 MB dan katta. Qisqaroq video tanlang.'; $('#pErr').hidden = false; e.target.value = ''; return; }
+clearVid(); pending = {video:f}; const v = $('#pVid'); v.src = URL.createObjectURL(f); v.hidden = false; $('#pPrev').hidden = true; $('#dropHint').hidden = true; return;
+}
+if (!f.type.startsWith('image/')) { $('#pErr').textContent = 'Rasm yoki video tanlang.'; $('#pErr').hidden = false; return; }
+shrink(f, 1280, src => { clearVid(); pending = src; $('#pPrev').src = src; $('#pPrev').hidden = false; $('#dropHint').hidden = true; }); });
 $('#postForm').addEventListener('submit', async e => {
 e.preventDefault();
-if (!pending) { $('#pErr').textContent = 'Avval rasm tanlang.'; $('#pErr').hidden = false; return; }
-const btn = e.target.querySelector('button[type=submit]'); busy(btn, true, 'Joylanmoqda…');
+if (!pending) { $('#pErr').textContent = 'Avval rasm yoki video tanlang.'; $('#pErr').hidden = false; return; }
+const btn = e.target.querySelector('button[type=submit]'); busy(btn, true, pending.video ? 'Video yuklanmoqda…' : 'Joylanmoqda…');
 try {
-const url = await upload(pending);
+let url;
+if (pending.video) { const f = pending.video, ext = ((f.name.match(/\.(mp4|mov|webm|m4v)$/i) || [])[1] || (f.type.includes('webm') ? 'webm' : f.type.includes('quicktime') ? 'mov' : 'mp4')).toLowerCase(); url = await uploadBlob(f, ext, f.type || 'video/mp4'); }
+else url = await upload(pending);
 const { data, error } = await sb.from('posts').insert({owner_id:S.user.id, photo_url:url, place:$('#pPlace').value.trim() || null, caption:$('#pCap').value.trim() || null}).select().single();
 if (error) throw error;
-closeSheet(); await refresh(); show('sayohat'); setTimeout(() => { const el = $('#post-' + data.id); if (el) el.scrollIntoView({behavior:reduce ? 'auto' : 'smooth', block:'center'}); }, 150); toast('Rasm joylandi');
+clearVid(); closeSheet(); await refresh(); show('sayohat'); setTimeout(() => { const el = $('#post-' + data.id); if (el) el.scrollIntoView({behavior:reduce ? 'auto' : 'smooth', block:'center'}); }, 150); toast('Rasm joylandi');
 } catch (er) { fail(er); } finally { busy(btn, false); }
 });
 /* ---------- profile photo ---------- */
@@ -556,7 +703,7 @@ const act = a.dataset.act;
 if (act === 'photo') openCompose();
 else if (act === 'elon') openNewTour();
 else if (act === 'ijara') openNewRent();
-else if (act === 'lang') toast('Rus va ingliz tillari keyingi bosqichda');
+else if (act === 'lang') openLang();
 else if (act === 'help') toast('Favqulodda holatda 112 raqamiga qo\'ng\'iroq qiling');
 else if (act === 'logout') ask('Akkauntdan chiqasizmi?', 'Qayta kirish uchun Telegram botdan yangi kod olasiz.', async () => { await sb.auth.signOut(); S.user = null; showAuth(); });
 });
@@ -564,6 +711,12 @@ document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.ma
 $$('.pill-nav [data-v]').forEach(b => b.addEventListener('click', () => show(b.dataset.v)));
 $('#filters').addEventListener('click', e => { const c = e.target.closest('button'); if (!c) return; filter = c.dataset.f; $$('#filters button').forEach(x => x.setAttribute('aria-pressed', x === c)); renderTours(); });
 $('#q').addEventListener('input', renderTours);
+$('#viewSw').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setHomeView(b.dataset.view); });
+/* ---------- language ---------- */
+function paintLangPicks(){ $$('[data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === I18N.lang)); }
+function openLang(){ paintLangPicks(); openSheet('#langSheet'); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-lang]'); if (!b) return; I18N.set(b.dataset.lang); paintLangPicks(); rerender(); paintDates(); if (!$('#langSheet').hidden) setTimeout(closeSheet, 250); });
+paintLangPicks();
 $('#sform').addEventListener('submit', e => { e.preventDefault(); renderTours(); });
 $('#bell').addEventListener('click', () => toast('Hozircha yangi bildirishnoma yo\'q'));
 /* ---------- registration via Telegram bot code ---------- */
