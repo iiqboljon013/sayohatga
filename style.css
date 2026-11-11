@@ -399,7 +399,7 @@ body.sheet-open nav.tab,body.sheet-open .buybar{display:none}
 .vprev{width:100%;max-height:52vh;border-radius:20px;background:#000;display:block}
 /* ---- maps ---- */
 .leaflet-container{font-family:var(--sans);background:#0A1611}
-.map .leaflet-container,.map.leaflet-container{height:100%;width:100%}
+.map{flex:none}
 .maploading{display:grid;place-items:center;height:100%;color:var(--tx-3);font-size:14px}
 .homemap{height:62vh;min-height:320px}
 .formmap{height:230px}
