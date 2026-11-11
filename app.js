@@ -248,7 +248,8 @@ return `<svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" role="im
 const pinIc = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none;color:var(--dawn)"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
 const UZ_CENTER = [41.2, 66.0];
 const hasMap = () => typeof window.L !== 'undefined';
-const tileLayer = () => L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom:19, subdomains:'abcd', attribution:'&copy; OpenStreetMap, &copy; CARTO'});
+if (window.L) L.Control.Attribution.prototype.options.prefix = '<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>';
+const tileLayer = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
 const pinIcon = () => L.divIcon({className:'sgpin', html:'<span></span>', iconSize:[30, 40], iconAnchor:[15, 38], popupAnchor:[0, -34]});
 const mapLinks = t => {
 const ll = t.lat != null ? `${t.lat},${t.lng}` : null;
