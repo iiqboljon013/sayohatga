@@ -271,7 +271,10 @@
     "O'chirish": ['Удалить', 'Delete'],
     'Tilni tanlang': ['Выберите язык', 'Choose a language'],
     'Tekshirilmoqda…': ['Проверяем…', 'Checking…'],
-    'hozirgina': ['только что', 'just now']
+    'hozirgina': ['только что', 'just now'],
+    "E'lonlari": ['Объявления', 'Trips'], 'Ijaraga beradi': ['Сдаёт в аренду', 'Rents out'], 'Lavhalari': ['Моменты', 'Moments'],
+    "Hali e'lon joylamagan.": ['Пока нет объявлений.', 'No trips yet.'], 'Hali jihoz joylamagan.': ['Пока нет снаряжения.', 'No gear yet.'], 'Hali lavha joylamagan.': ['Пока нет публикаций.', 'No posts yet.'],
+    "e'lon": ['объявл.', 'trips'], 'jihoz': ['вещей', 'items'], 'lavha': ['моментов', 'moments'], 'Profil ›': ['Профиль ›', 'Profile ›'], 'Foydalanuvchi': ['Пользователь', 'User']
   };
 
   /* placeholders: translated only inside input hints, never in user text */

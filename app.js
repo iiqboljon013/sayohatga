@@ -98,7 +98,7 @@ return `<article class="card rv" data-open="t:${t.id}" tabindex="0" aria-label="
 <div class="row"><div style="min-width:0"><div class="name">${esc(t.name)}</div><div class="sub">${esc(t.place)}</div></div><div style="text-align:right"><div class="price">${fmt(t.p)}</div><div class="sub">1 kishi</div></div></div>
 <div class="meta two"><div><span>KETISH</span><b>${dShort(t.depDate)}, ${t.depTime}</b></div><div><span>QAYTISH</span><b>${dShort(t.retDate)}, ${t.retTime}</b></div></div>
 <div class="slots"><span>Joylar</span><div class="meter"><i data-fill="${Math.round(t.taken / t.cap * 100)}"></i></div><b style="color:var(--tx);font-variant-numeric:tabular-nums">${t.taken}/${t.cap}</b></div>
-<div class="foot">${avHTML(t.ownerId)}<span class="who" style="min-width:0"><b>${esc(g.name)}</b><small>Gid</small></span>
+<div class="foot"><span class="ulink" data-user="${t.ownerId}" role="link" tabindex="0">${avHTML(t.ownerId)}<span class="who" style="min-width:0"><b>${esc(g.name)}</b><small>Gid</small></span></span>
 ${own ? `<button class="glow done" type="button" data-go="t:${t.id}">Sizning e'loningiz</button>` : `<button class="glow ${b ? 'done' : ''}" type="button" data-bookopen="${t.id}">${b ? 'Band qilindi ✓' : 'Band qilish'}</button>`}</div>
 </div></article>`;
 }
@@ -113,7 +113,7 @@ if (homeView === 'map') renderHomeMap();
 /* ---------- rentals ---------- */
 const rentThumb = r => r.photos.length ? `<img src="${esc(r.photos[0])}" alt="${esc(r.name)}" loading="lazy">` : logoPh('md');
 function renderGear(){
-$('#gear').innerHTML = S.rentals.map(r => { const on = S.cart.includes(r.id), own = isMine(r); return `<div class="g rv" data-open="r:${r.id}" tabindex="0" aria-label="${esc(r.name)} — batafsil"><div class="gph">${rentThumb(r)}</div><div class="gb"><b>${esc(r.name)}</b><small class="own">${own ? 'Sizning jihozingiz' : esc(person(r.ownerId).name)}</small><div class="gr"><span>${fmt(r.p)}</span>${own ? '' : `<button class="add ${on ? 'on' : ''}" type="button" data-cart="${r.id}" aria-label="${esc(r.name)} — ijaraga olish" aria-pressed="${on}">${on ? '✓' : '+'}</button>`}</div></div></div>`; }).join('')
+$('#gear').innerHTML = S.rentals.map(r => { const on = S.cart.includes(r.id), own = isMine(r); return `<div class="g rv" data-open="r:${r.id}" tabindex="0" aria-label="${esc(r.name)} — batafsil"><div class="gph">${rentThumb(r)}</div><div class="gb"><b>${esc(r.name)}</b><small class="own${own ? '' : ' ulink'}"${own ? '' : ` data-user="${r.ownerId}"`}>${own ? 'Sizning jihozingiz' : esc(person(r.ownerId).name)}</small><div class="gr"><span>${fmt(r.p)}</span>${own ? '' : `<button class="add ${on ? 'on' : ''}" type="button" data-cart="${r.id}" aria-label="${esc(r.name)} — ijaraga olish" aria-pressed="${on}">${on ? '✓' : '+'}</button>`}</div></div></div>`; }).join('')
 || `<p class="empty" style="grid-column:1/-1">${S.loaded ? "Hali jihoz yo'q. «+» → Ijara orqali birinchi bo'lib joylang." : 'Yuklanmoqda…'}</p>`;
 observe($('#gear'));
 }
@@ -134,7 +134,7 @@ const media = (p, grid) => isVideo(p.src)
 function postCard(p){
 const who = person(p.uid);
 return `<article class="post rv" id="post-${p.id}">
-<div class="ph">${avHTML(p.uid)}<span style="min-width:0"><b>${esc(who.name)}</b><small>${esc(p.place)} · ${ago(p.ts)}</small></span>${isMine(p) ? `<button class="xdel" type="button" data-delpost="${p.id}" aria-label="Rasmni o'chirish">${trashIc}</button>` : ''}</div>
+<div class="ph"><span class="ulink" data-user="${p.uid}" role="link" tabindex="0">${avHTML(p.uid)}</span><span style="min-width:0"><b class="ulink" data-user="${p.uid}">${esc(who.name)}</b><small>${esc(p.place)} · ${ago(p.ts)}</small></span>${isMine(p) ? `<button class="xdel" type="button" data-delpost="${p.id}" aria-label="Rasmni o'chirish">${trashIc}</button>` : ''}</div>
 <div class="pimg${isVideo(p.src) ? ' isvid' : ''}" data-tap="${p.id}">${media(p)}<span class="burst">${bigHeart}</span></div>
 <div class="pact"><button type="button" class="${liked(p) ? 'liked' : ''}" data-like="${p.id}" aria-pressed="${liked(p)}" aria-label="Yoqdi">${heartIc}<span>${likes(p)}</span></button><button type="button" data-cmts="p-${p.id}" aria-label="Izohlar">${cmtIc}<span>${ccount('p-' + p.id)}</span></button><button type="button" data-share="p-${p.id}" aria-label="Ulashish">${sendIc}</button></div>
 ${p.cap ? `<p class="pcap"><b>${esc(who.name.split(' ')[0])}</b>${esc(p.cap)}</p>` : '<div style="height:12px"></div>'}
@@ -162,7 +162,7 @@ const tickets = ts.map(t => { const bk = t.mine, g = person(t.ownerId); return `
 <span class="chip"><span class="live"></span>${bk.status === 'paid' ? "To'langan" : 'Band qilindi'} · ${bk.seats} kishi · ${fmt(t.p * bk.seats)} · ${esc(bk.pay_method)}</span>
 <div class="big" data-go="t:${t.id}" style="cursor:pointer">${esc(t.name)}</div>
 <div class="legs"><div><b>${t.depTime}</b><small>${dLong(t.depDate)} · ${esc(t.meet)}</small></div><span class="mid">→</span><div><b>${t.retTime}</b><small>${dLong(t.retDate)}</small></div></div>
-<div class="foot">${avHTML(t.ownerId)}<span class="who"><b>${esc(g.name)}</b><small>Gidingiz</small></span><button class="glow done" type="button" data-cancel="${t.id}">Bekor qilish</button></div>
+<div class="foot"><span class="ulink" data-user="${t.ownerId}" role="link" tabindex="0">${avHTML(t.ownerId)}<span class="who"><b>${esc(g.name)}</b><small>Gidingiz</small></span></span><button class="glow done" type="button" data-cancel="${t.id}">Bekor qilish</button></div>
 </div>`; }).join('');
 const total = items.reduce((s, r) => s + r.p, 0);
 const rent = items.length ? `
@@ -248,7 +248,7 @@ return `<svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" role="im
 const pinIc = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none;color:var(--dawn)"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
 const UZ_CENTER = [41.2, 66.0];
 const hasMap = () => typeof window.L !== 'undefined';
-if (window.L) L.Control.Attribution.prototype.options.prefix = '<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>';
+if (window.L && L.Control && L.Control.Attribution) L.Control.Attribution.prototype.options.prefix = '<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>';
 const tileLayer = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'});
 const pinIcon = () => L.divIcon({className:'sgpin', html:'<span></span>', iconSize:[30, 40], iconAnchor:[15, 38], popupAnchor:[0, -34]});
 const mapLinks = t => {
@@ -374,7 +374,7 @@ ${own ? `
 <div class="thumbs">${thumbsHTML(t.photos, 'data-delph', 'tFile')}</div>
 <input id="tFile" type="file" accept="image/*" multiple hidden>
 <h3 class="dh" style="font-size:16px">Band qilganlar ro'yxati</h3>
-<div class="plist">${t.participants.length ? t.participants.map(x => `<div class="prow">${avHTML(x.uid, 34)}<span style="min-width:0"><b>${esc(x.name)}</b><small>${esc(x.m)} · ${ago(x.ts)}</small></span><span class="pn">${x.n} kishi<small>${fmt(x.n * t.p)}</small></span></div>`).join('') : '<p class="sub">Hali hech kim band qilmagan.</p>'}</div>
+<div class="plist">${t.participants.length ? t.participants.map(x => `<div class="prow ulink" data-user="${x.uid}" role="link" tabindex="0">${avHTML(x.uid, 34)}<span style="min-width:0"><b>${esc(x.name)}</b><small>${esc(x.m)} · ${ago(x.ts)}</small></span><span class="pn">${x.n} kishi<small>${fmt(x.n * t.p)}</small></span></div>`).join('') : '<p class="sub">Hali hech kim band qilmagan.</p>'}</div>
 <button type="button" class="danger" data-deltour="${t.id}">${trashIc}E'lonni o'chirish</button>
 </div>` : ''}
 <p class="ddesc">${esc(t.desc)}</p>
@@ -392,7 +392,7 @@ ${t.needs.length ? `<h2 class="dh">Nimalar kerak</h2><div class="needs">${t.need
 <p class="addr" id="tAddr"${t.addr ? '' : ' hidden'}>${pinIc}<span>${esc(t.addr)}</span></p>
 <div class="maplinks" id="tLinks">${mapLinks(t)}</div>
 <h2 class="dh">Gid</h2>
-<div class="gcard">${avHTML(t.ownerId, 48)}<span><b>${esc(g.name)}</b><small>Gid</small></span></div>
+<div class="gcard ulink" data-user="${t.ownerId}" role="link" tabindex="0">${avHTML(t.ownerId, 48)}<span><b>${esc(g.name)}</b><small>Gid</small></span><span class="garr">Profil ›</span></div>
 ${cmtPreview(key)}
 <div style="height:20px"></div>`;
 wireSlides(el);
@@ -436,7 +436,7 @@ ${own ? `
 ${r.desc ? `<p class="ddesc">${esc(r.desc)}</p>` : ''}
 <div class="kv"><div><span>Qayerdan olinadi</span><b>${esc(r.where)}</b></div><div><span>Narx</span><b>${fmt(r.p)} / kun</b></div></div>
 <h2 class="dh">Egasi</h2>
-<div class="gcard">${avHTML(r.ownerId, 48)}<span><b>${esc(g.name)}</b><small>${own ? 'Siz' : 'Ijaraga beruvchi'}</small></span></div>
+<div class="gcard ulink" data-user="${r.ownerId}" role="link" tabindex="0">${avHTML(r.ownerId, 48)}<span><b>${esc(g.name)}</b><small>${own ? 'Siz' : 'Ijaraga beruvchi'}</small></span><span class="garr">Profil ›</span></div>
 ${cmtPreview(key)}
 <div style="height:20px"></div>`;
 wireSlides(el);
@@ -451,15 +451,49 @@ updateBuy();
 }
 /* ---------- navigation ---------- */
 const views = ['sayohat', 'ijara', 'band', 'profil'];
-function hideAll(){ [...views, 'detail', 'rent'].forEach(x => { const s = $('#v-' + x); s.hidden = true; s.style.display = ''; }); }
+function hideAll(){ [...views, 'detail', 'rent', 'user'].forEach(x => { const s = $('#v-' + x); s.hidden = true; s.style.display = ''; }); }
 function setHash(h){ try { if (h) { if (location.hash !== '#' + h) history.replaceState(null, '', '#' + h); } else if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (_) {} }
 function show(v){
-closeSheet(); hideAll(); cur = null;
+closeSheet(); hideAll(); cur = null; viewUser = null;
 const s = $('#v-' + v); s.hidden = false; s.style.display = 'flex';
 document.body.classList.remove('detail'); $('#buybar').hidden = true;
 $$('.pill-nav [data-v]').forEach(b => b.dataset.v === v ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
 rerender(); observe(s); setHash('');
 window.scrollTo({top:0});
+}
+/* ---------- someone else's profile ---------- */
+let viewUser = null, userBack = null;
+function openUser(id){
+if (!id) return false;
+if (S.user && id === S.user.id) { show('profil'); return true; }
+const vis = views.find(v => !$('#v-' + v).hidden); if (vis) prevView = vis;
+userBack = cur ? cur.kind + ':' + cur.item.id : null;
+closeSheet(); hideAll(); cur = null; viewUser = id;
+const s = $('#v-user'); s.hidden = false; s.style.display = 'flex';
+document.body.classList.add('detail'); $('#buybar').hidden = true;
+renderUser(); setHash('u-' + id); window.scrollTo({top:0});
+return true;
+}
+function renderUser(){
+const id = viewUser, p = person(id), prof = S.profiles[id];
+const tours = S.tours.filter(t => t.ownerId === id), rents = S.rentals.filter(r => r.ownerId === id), posts = S.posts.filter(x => x.uid === id);
+const el = $('#v-user');
+el.innerHTML = `
+<div class="utop"><button class="glassround" type="button" data-back aria-label="Orqaga"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><button class="glassround" type="button" data-share="u-${esc(id)}" aria-label="Ulashish">${sendIc}</button></div>
+<div class="uhead">
+<span class="av ubig" style="background:${p.col}">${p.avatar ? `<img src="${esc(p.avatar)}" alt="">` : esc(initials(p.name))}</span>
+<div style="min-width:0"><h1 class="dtitle" style="font-size:26px">${esc(prof ? p.name : 'Foydalanuvchi')}</h1>${tours.length ? '<span class="pill p-easy">Gid</span>' : ''}</div>
+</div>
+<div class="ustats"><div><b>${tours.length}</b><span>e'lon</span></div><div><b>${rents.length}</b><span>jihoz</span></div><div><b>${posts.length}</b><span>lavha</span></div></div>
+<div class="sec"><div><h2 style="font-size:20px">E'lonlari</h2></div></div>
+<div style="display:flex;flex-direction:column;gap:16px">${tours.length ? tours.map(tourCard).join('') : `<p class="sub">Hali e'lon joylamagan.</p>`}</div>
+<div class="sec"><div><h2 style="font-size:20px">Ijaraga beradi</h2></div></div>
+${rents.length ? `<div class="gear">${rents.map(r => `<div class="g rv in" data-open="r:${r.id}" tabindex="0"><div class="gph">${rentThumb(r)}</div><div class="gb"><b>${esc(r.name)}</b><div class="gr"><span>${fmt(r.p)}</span></div></div></div>`).join('')}</div>` : `<p class="sub">Hali jihoz joylamagan.</p>`}
+<div class="sec"><div><h2 style="font-size:20px">Lavhalari</h2></div></div>
+${posts.length ? `<div class="grid3">${posts.map(x => `<a class="cell" href="#p-${x.id}" data-gopost="${x.id}">${media(x, true)}<span>${heartIc.replace('width="24" height="24"', 'width="14" height="14"')}${likes(x)}</span></a>`).join('')}</div>` : `<p class="sub">Hali lavha joylamagan.</p>`}
+<div style="height:20px"></div>`;
+el.querySelectorAll('.rv').forEach(x => x.classList.add('in'));
+el.querySelectorAll('[data-fill]').forEach(m => m.style.width = m.dataset.fill + '%');
 }
 function openItem(ref){
 const [kind, id] = ref.split(':');
@@ -478,6 +512,7 @@ return true;
 }
 function rerender(){
 renderTours(); renderGear(); renderFeed(); renderBooked(); renderProfile();
+if (viewUser && !$('#v-user').hidden) renderUser();
 const bd = $('#cartBadge'); bd.textContent = S.cart.length; bd.hidden = !S.cart.length;
 if (cur) { const fresh = (cur.kind === 't' ? S.tours : S.rentals).find(x => x.id === cur.item.id); if (fresh) { cur.item = fresh; cur.kind === 't' ? renderTour() : renderRental(); } else show(prevView); }
 }
@@ -485,6 +520,7 @@ function route(){
 const h = location.hash.slice(1); let m;
 if ((m = h.match(/^t-(.+)$/))) return openItem('t:' + m[1]);
 if ((m = h.match(/^r-(.+)$/))) return openItem('r:' + m[1]);
+if ((m = h.match(/^u-(.+)$/))) return openUser(m[1]);
 if ((m = h.match(/^p-(.+)$/))) { const el = $('#post-' + m[1]); if (el) { el.scrollIntoView({block:'center'}); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1800); } else toast('Bu rasm topilmadi'); }
 }
 window.addEventListener('hashchange', () => { if (S.user) route(); });
@@ -505,7 +541,7 @@ $('#askYes').onclick = () => { const f = askCb; askCb = null; closeSheet(); if (
 const busy = (btn, on, label) => { if (!btn) return; if (on) { btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = `<span class="spin"></span> ${label || 'Kuting…'}`; } else { btn.disabled = false; if (btn.dataset.label) btn.innerHTML = btn.dataset.label; } };
 /* comments */
 let cmtKey = null;
-function cmtHTML(c){ const p = person(c.uid), mineC = S.user && c.uid === S.user.id; return `<div class="cmt">${avHTML(c.uid, 32)}<div class="bubble"><b>${esc(p.name)}</b><small>${ago(c.ts)}</small><p>${esc(c.text)}</p></div>${mineC ? `<button class="x" type="button" data-delcmt="${c.id}" aria-label="Izohni o'chirish">×</button>` : ''}</div>`; }
+function cmtHTML(c){ const p = person(c.uid), mineC = S.user && c.uid === S.user.id; return `<div class="cmt"><span class="ulink" data-user="${c.uid}" role="link" tabindex="0">${avHTML(c.uid, 32)}</span><div class="bubble"><b class="ulink" data-user="${c.uid}">${esc(p.name)}</b><small>${ago(c.ts)}</small><p>${esc(c.text)}</p></div>${mineC ? `<button class="x" type="button" data-delcmt="${c.id}" aria-label="Izohni o'chirish">×</button>` : ''}</div>`; }
 function openCmts(key){ cmtKey = key; renderCmts(); openSheet('#cmts'); setTimeout(() => $('#cmtIn').focus(), 100); }
 function renderCmts(){ const list = S.comments[cmtKey] || []; $('#cmtTitle').textContent = `Izohlar (${list.length})`; $('#cmtList').innerHTML = list.map(cmtHTML).join('') || '<p class="sub">Hali izoh yo\'q. Birinchi bo\'lib yozing.</p>'; $('#cmtList').scrollTop = 1e6; }
 $('#cmtForm').addEventListener('submit', async e => {
@@ -528,7 +564,7 @@ function refreshCounts(){ $$('[data-cmts^="p-"] span').forEach(s => { s.textCont
 /* share */
 function openShare(key){
 const url = SITE + '#' + key, id = key.slice(2);
-const what = key[0] === 't' ? (S.tours.find(x => x.id === id) || {}).name : key[0] === 'r' ? (S.rentals.find(x => x.id === id) || {}).name : ((S.posts.find(x => x.id === id) || {}).place || 'Rasm');
+const what = key[0] === 'u' ? person(id).name : key[0] === 't' ? (S.tours.find(x => x.id === id) || {}).name : key[0] === 'r' ? (S.rentals.find(x => x.id === id) || {}).name : ((S.posts.find(x => x.id === id) || {}).place || 'Rasm');
 $('#shareWhat').textContent = what || '';
 $('#shareUrl').value = url;
 const text = `${what || ''} — sayohatga`;
@@ -684,7 +720,8 @@ try { const url = await upload(src); const { error } = await sb.from('profiles')
 let lastTap = {id:null, t:0};
 document.addEventListener('click', e => {
 const t = e.target;
-if (t.closest('[data-back]')) { show(prevView); return; }
+if (t.closest('[data-back]')) { if (t.closest('#v-user') && userBack) { const b = userBack; userBack = null; if (openItem(b)) return; } show(prevView); return; }
+const us = t.closest('[data-user]'); if (us) { e.preventDefault(); e.stopPropagation(); openUser(us.dataset.user); return; }
 const go = t.closest('[data-go]'); if (go) { openItem(go.dataset.go); return; }
 const cart = t.closest('[data-cart]'); if (cart) { e.stopPropagation(); toggleCart(cart.dataset.cart); return; }
 const op = t.closest('[data-open]'); if (op && !t.closest('button')) { openItem(op.dataset.open); return; }
@@ -696,6 +733,7 @@ const sh = t.closest('[data-share]'); if (sh) { openShare(sh.dataset.share); ret
 const dp = t.closest('[data-delpost]'); if (dp) { ask('Rasmni o\'chirasizmi?', 'Uni qayta tiklab bo\'lmaydi.', async () => { const { error } = await sb.from('posts').delete().eq('id', dp.dataset.delpost); if (error) return fail(error); await refresh(); toast('Rasm o\'chirildi'); }); return; }
 const dt = t.closest('[data-deltour]'); if (dt) { ask('E\'lonni o\'chirasizmi?', 'E\'lon va band qilganlar ro\'yxati butunlay o\'chadi.', async () => { const { error } = await sb.from('tours').delete().eq('id', dt.dataset.deltour); if (error) return fail(error); await refresh(); show('profil'); toast('E\'lon o\'chirildi'); }); return; }
 const dr = t.closest('[data-delrent]'); if (dr) { ask('Jihozni o\'chirasizmi?', 'E\'lon butunlay o\'chadi.', async () => { const { error } = await sb.from('rentals').delete().eq('id', dr.dataset.delrent); if (error) return fail(error); await refresh(); show('profil'); toast('Jihoz o\'chirildi'); }); return; }
+const gp = t.closest('[data-gopost]'); if (gp) { e.preventDefault(); show('sayohat'); setTimeout(() => { const el2 = $('#post-' + gp.dataset.gopost); if (el2) { el2.scrollIntoView({block:'center'}); el2.classList.add('flash'); setTimeout(() => el2.classList.remove('flash'), 1800); } }, 120); return; }
 const tp = t.closest('[data-tap]');
 if (tp) { const id = tp.dataset.tap, now = Date.now(); if (lastTap.id === id && now - lastTap.t < 350) { setLike(id, true); const bu = tp.querySelector('.burst'); bu.classList.remove('go'); void bu.offsetWidth; bu.classList.add('go'); lastTap = {id:null, t:0}; } else lastTap = {id, t:now}; return; }
 const a = t.closest('[data-act]'); if (!a) return;
@@ -708,7 +746,7 @@ else if (act === 'lang') openLang();
 else if (act === 'help') toast('Favqulodda holatda 112 raqamiga qo\'ng\'iroq qiling');
 else if (act === 'logout') ask('Akkauntdan chiqasizmi?', 'Qayta kirish uchun Telegram botdan yangi kod olasiz.', async () => { await sb.auth.signOut(); S.user = null; showAuth(); });
 });
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-open]')) openItem(e.target.dataset.open); if (e.key === 'Escape') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-user]')) { e.stopPropagation(); openUser(e.target.dataset.user); return; } if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-open]')) openItem(e.target.dataset.open); if (e.key === 'Escape') closeSheet(); });
 $$('.pill-nav [data-v]').forEach(b => b.addEventListener('click', () => show(b.dataset.v)));
 $('#filters').addEventListener('click', e => { const c = e.target.closest('button'); if (!c) return; filter = c.dataset.f; $$('#filters button').forEach(x => x.setAttribute('aria-pressed', x === c)); renderTours(); });
 $('#q').addEventListener('input', renderTours);
