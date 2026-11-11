@@ -60,10 +60,12 @@ sb.from('posts').select('*').order('created_at', {ascending:false}).limit(100),
 sb.from('likes').select('*'),
 sb.from('comments').select('*').order('created_at', {ascending:true}).limit(2000),
 sb.from('profiles').select('*'),
-S.user ? sb.from('bookings').select('*') : Promise.resolve({data:[]})
+S.user ? sb.from('bookings').select('*') : Promise.resolve({data:[]}),
+sb.from('rental_cards').select('*'),
+S.user ? sb.from('rental_bookings').select('*').order('created_at', {ascending:false}) : Promise.resolve({data:[]})
 ]);
 const bad = q.find(r => r.error); if (bad) throw bad.error;
-const [tours, taken, cards, rentals, posts, likes, comments, profiles, bookings] = q.map(r => r.data || []);
+const [tours, taken, cards, rentals, posts, likes, comments, profiles, bookings, rcards, rbooks] = q.map(r => r.data || []);
 S.profiles = Object.fromEntries(profiles.map(p => [p.id, p]));
 if (S.user && S.profiles[S.user.id]) Object.assign(S.user, S.profiles[S.user.id]);
 const tk = Object.fromEntries(taken.map(x => [x.tour_id, x.taken]));
@@ -71,15 +73,19 @@ const cm = Object.fromEntries(cards.map(x => [x.tour_id, x.card_masked]));
 S.tours = tours.map(x => { const dep = tz(x.depart_at), ret = tz(x.return_at), geo = parseGeo(x.map_query, x.name); return {
 id:x.id, ownerId:x.owner_id, card:cm[x.id] || '', name:x.name, place:x.place, q:geo.q, lat:geo.lat, lng:geo.lng, addr:geo.addr, lvl:x.level, p:x.price, cap:x.capacity, meet:x.meet_point,
 depDate:dep.d, depTime:dep.t, retDate:ret.d, retTime:ret.t, desc:x.description, needs:x.needs || [], photos:x.photos || [], taken:tk[x.id] || 0,
-participants: bookings.filter(b => b.tour_id === x.id && b.status !== 'cancelled' && (!S.user || b.user_id !== S.user.id)).map(b => ({uid:b.user_id, name:person(b.user_id).name, n:b.seats, m:b.pay_method, status:b.status, ts:Date.parse(b.created_at)})),
+participants: bookings.filter(b => b.tour_id === x.id && b.status !== 'cancelled' && (!S.user || b.user_id !== S.user.id)).map(b => ({id:b.id, uid:b.user_id, name:person(b.user_id).name, n:b.seats, m:b.pay_method, status:b.status, arrived:!!b.arrived, ts:Date.parse(b.created_at)})),
 mine: S.user ? (bookings.find(b => b.tour_id === x.id && b.user_id === S.user.id && b.status !== 'cancelled') || null) : null }; });
-S.rentals = rentals.map(x => ({id:x.id, ownerId:x.owner_id, name:x.name, p:x.price, where:x.pickup, desc:x.description || '', photos:x.photos || []}));
+const rcm = Object.fromEntries(rcards.map(x => [x.rental_id, x]));
+S.rbs = rbooks;
+S.rentals = rentals.map(x => ({id:x.id, ownerId:x.owner_id, name:x.name, p:x.price, where:x.pickup, desc:x.description || '', photos:x.photos || [],
+card:(rcm[x.id] || {}).card_masked || '', hasTg:!!(rcm[x.id] || {}).has_telegram,
+bookings: rbooks.filter(b => b.rental_id === x.id && b.status !== 'cancelled'),
+mine: S.user ? (rbooks.find(b => b.rental_id === x.id && b.user_id === S.user.id && b.status !== 'cancelled') || null) : null}));
 S.likes = likes;
 S.posts = posts.map(x => ({id:x.id, uid:x.owner_id, place:x.place || '', cap:x.caption || '', src:x.photo_url, ts:Date.parse(x.created_at)}));
 S.comments = {};
 const pre = {tour:'t-', rental:'r-', post:'p-'};
 comments.forEach(c => { const k = pre[c.target_type] + c.target_id; (S.comments[k] = S.comments[k] || []).push({id:c.id, uid:c.user_id, text:c.body, ts:Date.parse(c.created_at)}); });
-S.cart = S.cart.filter(id => S.rentals.some(r => r.id === id)); saveCart();
 S.loaded = true;
 }
 async function refresh(){ try { await loadAll(); rerender(); } catch (e) { fail(e); } }
@@ -113,17 +119,21 @@ if (homeView === 'map') renderHomeMap();
 /* ---------- rentals ---------- */
 const rentThumb = r => r.photos.length ? `<img src="${esc(r.photos[0])}" alt="${esc(r.name)}" loading="lazy">` : logoPh('md');
 function renderGear(){
-$('#gear').innerHTML = S.rentals.map(r => { const on = S.cart.includes(r.id), own = isMine(r); return `<div class="g rv" data-open="r:${r.id}" tabindex="0" aria-label="${esc(r.name)} — batafsil"><div class="gph">${rentThumb(r)}</div><div class="gb"><b>${esc(r.name)}</b><small class="own${own ? '' : ' ulink'}"${own ? '' : ` data-user="${r.ownerId}"`}>${own ? 'Sizning jihozingiz' : esc(person(r.ownerId).name)}</small><div class="gr"><span>${fmt(r.p)}</span>${own ? '' : `<button class="add ${on ? 'on' : ''}" type="button" data-cart="${r.id}" aria-label="${esc(r.name)} — ijaraga olish" aria-pressed="${on}">${on ? '✓' : '+'}</button>`}</div></div></div>`; }).join('')
+$('#gear').innerHTML = S.rentals.map(r => { const on = !!r.mine, own = isMine(r); return `<div class="g rv" data-open="r:${r.id}" tabindex="0" aria-label="${esc(r.name)} — batafsil"><div class="gph">${rentThumb(r)}</div><div class="gb"><b>${esc(r.name)}</b><small class="own${own ? '' : ' ulink'}"${own ? '' : ` data-user="${r.ownerId}"`}>${own ? 'Sizning jihozingiz' : esc(person(r.ownerId).name)}</small><div class="gr"><span>${fmt(r.p)}</span>${own ? '' : on ? `<span class="gbtns"><button class="add minus" type="button" data-rcancel="${r.mine.id}" aria-label="${esc(r.name)} — bekor qilish">−</button><button class="add on" type="button" data-receipt="${r.mine.id}" aria-label="${esc(r.name)} — chek">✓</button></span>` : `<button class="add" type="button" data-cart="${r.id}" aria-label="${esc(r.name)} — ijaraga olish">+</button>`}</div></div></div>`; }).join('')
 || `<p class="empty" style="grid-column:1/-1">${S.loaded ? "Hali jihoz yo'q. «+» → Ijara orqali birinchi bo'lib joylang." : 'Yuklanmoqda…'}</p>`;
 observe($('#gear'));
 }
+/* "+" on a gear card opens the item and its payment (or its receipt if already rented) */
 function toggleCart(id){
-const r = S.rentals.find(x => x.id === id); if (!r || isMine(r)) return;
-const i = S.cart.indexOf(id); i >= 0 ? S.cart.splice(i, 1) : S.cart.push(id); saveCart();
-const bd = $('#cartBadge'); bd.textContent = S.cart.length; bd.hidden = !S.cart.length; bd.classList.remove('bump'); void bd.offsetWidth; bd.classList.add('bump');
-toast(i < 0 ? r.name + ' ijaraga olindi — Bandlarim bo\'limida' : 'Ijaradan olib tashlandi');
-rerender();
+if (!openItem('r:' + id)) return;
+const r = cur.item; if (isMine(r)) return;
+if (r.mine) openReceipt(r.mine.id); else openRentPay();
 }
+const myRentals = () => (S.rbs || []).filter(b => S.user && b.user_id === S.user.id && b.status !== 'cancelled');
+const rbCode = id => String(id).replace(/-/g, '').slice(0, 6).toUpperCase();
+const todayTz = () => tz(new Date().toISOString()).d;
+const addDays = (d, n) => { const t = new Date(d + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+const rbStatus = s => s === 'paid' ? "To'landi" : s === 'done' ? 'Qaytarildi' : 'Band qilindi';
 /* ---------- posts ---------- */
 const likes = p => S.likes.filter(l => l.post_id === p.id).length;
 const liked = p => !!(S.user && S.likes.some(l => l.post_id === p.id && l.user_id === S.user.id));
@@ -155,7 +165,7 @@ if (error) { if (nv) S.likes = S.likes.filter(l => !(l.post_id === id && l.user_
 function paintLike(p){ const nv = liked(p); $$(`[data-like="${p.id}"]`).forEach(b => { b.classList.toggle('liked', nv); b.setAttribute('aria-pressed', nv); b.querySelector('span').textContent = likes(p); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }); if (isMine(p)) renderProfile(); }
 /* ---------- booked ---------- */
 function renderBooked(){
-const ts = S.tours.filter(t => t.mine), items = S.cart.map(id => S.rentals.find(r => r.id === id)).filter(Boolean);
+const ts = S.tours.filter(t => t.mine), items = myRentals().map(b => ({b, r:S.rentals.find(x => x.id === b.rental_id)})).filter(x => x.r);
 if (!ts.length && !items.length) { $('#booked').innerHTML = `<p class="empty rv">Hali hech narsa band qilinmagan.</p>`; observe($('#booked')); return; }
 const tickets = ts.map(t => { const bk = t.mine, g = person(t.ownerId); return `
 <div class="ticket rv">
@@ -164,13 +174,13 @@ const tickets = ts.map(t => { const bk = t.mine, g = person(t.ownerId); return `
 <div class="legs"><div><b>${t.depTime}</b><small>${dLong(t.depDate)} · ${esc(t.meet)}</small></div><span class="mid">→</span><div><b>${t.retTime}</b><small>${dLong(t.retDate)}</small></div></div>
 <div class="foot"><span class="ulink" data-user="${t.ownerId}" role="link" tabindex="0">${avHTML(t.ownerId)}<span class="who"><b>${esc(g.name)}</b><small>Gidingiz</small></span></span><button class="glow done" type="button" data-cancel="${t.id}">Bekor qilish</button></div>
 </div>`; }).join('');
-const total = items.reduce((s, r) => s + r.p, 0);
-const rent = items.length ? `
-<div class="panel rv">
-<div class="panel-bar">Ijaraga olingan jihozlar<span class="tag fin">${items.length} TA</span></div>
-<div class="checks">${items.map(r => `<div class="ck done" style="cursor:pointer" data-open="r:${r.id}"><span class="box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#06100B" stroke-width="4"><path d="m5 12 5 5 9-10"/></svg></span>${esc(r.name)}<small>${fmt(r.p)}</small><button class="add on" type="button" data-cart="${r.id}" aria-label="${esc(r.name)} — olib tashlash" style="width:32px;height:32px;margin-left:4px">×</button></div>`).join('')}</div>
-<div class="progress"><span>Jami, bir kun uchun</span><span style="flex:1"></span><b style="min-width:0">${fmt(total)}</b></div>
-</div>` : '';
+const rent = items.map(({b, r}) => { const g = person(r.ownerId); return `
+<div class="ticket rv rticket">
+<span class="chip"><span class="live"></span>${rbStatus(b.status)} · ${b.days} kun · ${fmt(b.amount)} · ${esc(b.pay_method)}</span>
+<div class="big" data-go="r:${r.id}" style="cursor:pointer">${esc(r.name)}</div>
+<div class="legs"><div><b>${dLong(b.start_date)}</b><small>Olish</small></div><span class="mid">${b.days} kun</span><div><b>${dLong(addDays(b.start_date, b.days))}</b><small>Qaytarish</small></div></div>
+<div class="foot"><span class="ulink" data-user="${r.ownerId}" role="link" tabindex="0">${avHTML(r.ownerId)}<span class="who"><b>${esc(g.name)}</b><small>Ijaraga beruvchi</small></span></span><span class="tbtns"><button class="glow" type="button" data-receipt="${b.id}">Chek</button><button class="glow done" type="button" data-rcancel="${b.id}">Bekor qilish</button></span></div>
+</div>`; }).join('');
 $('#booked').innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">${tickets}${rent}</div>`;
 observe($('#booked'));
 }
@@ -190,7 +200,7 @@ $('#myGrid').innerHTML = posts.length ? `<div class="grid3">${posts.map(p => `<d
 : `<div class="empty-cta"><span>Hali rasm joylamadingiz.</span><button type="button" class="glow" data-act="photo" style="margin:0">Rasm joylash</button></div>`;
 }
 /* ---------- photos ---------- */
-function shrink(f, max, cb){ const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', .82)); }; img.onerror = () => toast('Rasmni ochib bo\'lmadi'); img.src = r.result; }; r.readAsDataURL(f); }
+function shrink(f, max, cb){ const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', max >= 1000 ? .9 : .85)); }; img.onerror = () => toast('Rasmni ochib bo\'lmadi'); img.src = r.result; }; r.readAsDataURL(f); }
 async function upload(dataUrl){ return uploadBlob(await (await fetch(dataUrl)).blob(), 'jpg', 'image/jpeg'); }
 async function uploadBlob(blob, ext, type){
 const path = `${S.user.id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -205,7 +215,7 @@ const imgs = files.filter(f => f.type.startsWith('image/'));
 if (!imgs.length) { toast('Rasm fayl tanlang'); return; }
 if (imgs.length > room) toast(`Faqat yana ${room} ta rasm qo'shish mumkin`);
 let left = Math.min(room, imgs.length);
-imgs.slice(0, room).forEach(f => shrink(f, 1280, src => { list.push(src); if (--left === 0) done(); }));
+imgs.slice(0, room).forEach(f => shrink(f, 2048, src => { list.push(src); if (--left === 0) done(); }));
 }
 const thumbsHTML = (photos, delAttr, inputId) => photos.map((src, k) => `<div class="th"><img src="${esc(src)}" alt="${k + 1}-rasm"><button class="del" type="button" ${delAttr}="${k}" aria-label="${k + 1}-rasmni o'chirish">×</button>${k ? '' : '<span class="main">Asosiy</span>'}</div>`).join('') + (photos.length < 10 ? `<label class="th addph" for="${inputId}">+<small>${photos.length} / 10</small></label>` : '');
 function heroMedia(item, fallback){
@@ -373,6 +383,7 @@ ${own ? `
 <h3 class="dh" style="font-size:16px">Rasmlar <span class="sub">${n} / 10</span></h3>
 <div class="thumbs">${thumbsHTML(t.photos, 'data-delph', 'tFile')}</div>
 <input id="tFile" type="file" accept="image/*" multiple hidden>
+<button type="button" class="rollbtn" data-roll="${t.id}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8M20 12v7H4V5h11"/></svg>Yo'qlama: kim keldi?<small>${t.participants.filter(x => x.arrived).reduce((a, x) => a + x.n, 0)} / ${t.taken}</small></button>
 <h3 class="dh" style="font-size:16px">Band qilganlar ro'yxati</h3>
 <div class="plist">${t.participants.length ? t.participants.map(x => `<div class="prow ulink" data-user="${x.uid}" role="link" tabindex="0">${avHTML(x.uid, 34)}<span style="min-width:0"><b>${esc(x.name)}</b><small>${esc(x.m)} · ${ago(x.ts)}</small></span><span class="pn">${x.n} kishi<small>${fmt(x.n * t.p)}</small></span></div>`).join('') : '<p class="sub">Hali hech kim band qilmagan.</p>'}</div>
 <button type="button" class="danger" data-deltour="${t.id}">${trashIc}E'lonni o'chirish</button>
@@ -410,11 +421,11 @@ function updateBuy(){
 const bar = $('#buybar');
 if (!cur || isMine(cur.item)) { bar.hidden = true; return; }
 bar.hidden = false;
-if (cur.kind === 'r') { $('.stepper').style.display = 'none'; const on = S.cart.includes(cur.item.id), b = $('#buyBtn'); b.classList.toggle('done', on); b.innerHTML = on ? 'Ijaraga olindi ✓ <small>· olib tashlash</small>' : `Ijaraga olish <small>· ${fmt(cur.item.p)} / kun</small>`; return; }
-const t = cur.item; $('.stepper').style.display = '';
+if (cur.kind === 'r') { $('#buybar .stepper').style.display = 'none'; const r = cur.item, b = $('#buyBtn'); b.classList.toggle('done', !!r.mine || !r.card); b.innerHTML = r.mine ? 'Ijaraga olindi ✓ <small>· chek</small>' : !r.card ? 'Egasi hali karta kiritmagan' : `Ijaraga olish <small>· ${fmt(r.p)} / kun</small>`; return; }
+const t = cur.item; $('#buybar .stepper').style.display = '';
 const n = qty[t.id] || 1, bk = t.mine, free = t.cap - t.taken;
 $('#qVal').textContent = bk ? bk.seats : n;
-$('.stepper').style.visibility = bk ? 'hidden' : '';
+$('#buybar .stepper').style.visibility = bk ? 'hidden' : '';
 const btn = $('#buyBtn'); btn.classList.toggle('done', !!bk);
 btn.innerHTML = bk ? 'Band qilindi ✓ <small>· ko\'rish</small>' : free <= 0 ? 'Joylar tugagan' : `Joy band qilish <small>· ${fmt(t.p * n)}</small>`;
 }
@@ -428,6 +439,17 @@ el.innerHTML = `
 ${own ? `
 <div class="own">
 <div class="own-h"><span class="kicker">Sizning jihozingiz</span><span class="sub" style="font-size:12px">Faqat siz ko'rasiz</span></div>
+${r.card ? `<div class="cardline">${cardIc}Pul tushadigan karta: <b>${esc(r.card)}</b></div><div class="cardline" id="rTgLine">${tgIc}Telegram: <b id="rTgName">…</b></div>
+<button type="button" class="linkbtn" id="rPayEdit" style="align-self:flex-start">Karta yoki Telegram'ni o'zgartirish</button>` : `<p class="notice">Mijozlar pul to'lab ijaraga olishi uchun karta va Telegram'ingizni kiriting.</p>`}
+<form id="rPayForm" class="rpayform" novalidate ${r.card ? 'hidden' : ''}>
+<div class="fld"><label for="rpCard">Karta raqami *</label><input id="rpCard" inputmode="numeric" autocomplete="off" placeholder="8600 0000 0000 0000" maxlength="19"></div>
+<div class="fld"><label for="rpHolder">Karta egasi *</label><input id="rpHolder" placeholder="ISM FAMILIYA" autocomplete="off"></div>
+<div class="fld"><label for="rpTg">Telegram username *</label><div class="phone"><span>@</span><input id="rpTg" autocomplete="off" autocapitalize="off" placeholder="username"></div><small class="hint">To'lagan mijoz sizga shu Telegram orqali yozadi.</small></div>
+<p class="err" id="rpFormErr" hidden></p>
+<button class="glow" type="submit" style="margin:0;justify-content:center;height:50px">Saqlash</button>
+</form>
+<h3 class="dh" style="font-size:16px">Ijaraga olganlar</h3>
+<div class="plist">${r.bookings.length ? r.bookings.map(b => `<div class="prow ulink" data-user="${b.user_id}" role="link" tabindex="0">${avHTML(b.user_id, 34)}<span style="min-width:0"><b>${esc(person(b.user_id).name)}</b><small>${dLong(b.start_date)} · ${b.days} kun · #${rbCode(b.id)}</small></span><span class="pn">${fmt(b.amount)}<small>${esc(b.pay_method)} · ${rbStatus(b.status)}</small></span></div>`).join('') : '<p class="sub">Hali hech kim ijaraga olmagan.</p>'}</div>
 <h3 class="dh" style="font-size:16px">Rasmlar <span class="sub">${r.photos.length} / 10</span></h3>
 <div class="thumbs">${thumbsHTML(r.photos, 'data-delrph', 'rdFile')}</div>
 <input id="rdFile" type="file" accept="image/*" multiple hidden>
@@ -435,6 +457,7 @@ ${own ? `
 </div>` : ''}
 ${r.desc ? `<p class="ddesc">${esc(r.desc)}</p>` : ''}
 <div class="kv"><div><span>Qayerdan olinadi</span><b>${esc(r.where)}</b></div><div><span>Narx</span><b>${fmt(r.p)} / kun</b></div></div>
+${!own ? `<p class="notice rnote">${r.mine ? "Siz bu jihozni ijaraga olgansiz. Chekni egasiga Telegram'da ko'rsating, u sizga lokatsiyani yuboradi." : "To'lovdan keyin chek va egasining Telegram'i chiqadi. Chekni unga ko'rsatsangiz, jihoz turgan joy lokatsiyasini yuboradi."}</p>` : ''}
 <h2 class="dh">Egasi</h2>
 <div class="gcard ulink" data-user="${r.ownerId}" role="link" tabindex="0">${avHTML(r.ownerId, 48)}<span><b>${esc(g.name)}</b><small>${own ? 'Siz' : 'Ijaraga beruvchi'}</small></span><span class="garr">Profil ›</span></div>
 ${cmtPreview(key)}
@@ -446,6 +469,7 @@ toast('Rasmlar yuklanmoqda…');
 try { const fresh = list.slice(r.photos.length); const urls = []; for (const d of fresh) urls.push(await upload(d)); if (await savePhotos('rentals', r, r.photos.concat(urls))) { renderRental(); renderGear(); toast('Rasm qo\'shildi'); } } catch (er) { fail(er); }
 }); e.target.value = ''; };
 el.querySelectorAll('[data-delrph]').forEach(b => b.onclick = async () => { const list = r.photos.slice(); list.splice(+b.dataset.delrph, 1); if (await savePhotos('rentals', r, list)) { renderRental(); renderGear(); toast('Rasm o\'chirildi'); } });
+wireOwnerPay(r);
 }
 updateBuy();
 }
@@ -513,7 +537,7 @@ return true;
 function rerender(){
 renderTours(); renderGear(); renderFeed(); renderBooked(); renderProfile();
 if (viewUser && !$('#v-user').hidden) renderUser();
-const bd = $('#cartBadge'); bd.textContent = S.cart.length; bd.hidden = !S.cart.length;
+const bd = $('#cartBadge'), nr = myRentals().length; bd.textContent = nr; bd.hidden = !nr;
 if (cur) { const fresh = (cur.kind === 't' ? S.tours : S.rentals).find(x => x.id === cur.item.id); if (fresh) { cur.item = fresh; cur.kind === 't' ? renderTour() : renderRental(); } else show(prevView); }
 }
 function route(){
@@ -527,7 +551,7 @@ window.addEventListener('hashchange', () => { if (S.user) route(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.user && S.loaded) refresh(); });
 /* ---------- sheets ---------- */
 const plus = $('#plus');
-const SHEETS = ['#sheet', '#compose', '#newTour', '#newRent', '#pay', '#cmts', '#share', '#ask', '#langSheet'];
+const SHEETS = ['#sheet', '#compose', '#newTour', '#newRent', '#pay', '#cmts', '#share', '#ask', '#langSheet', '#rentPay', '#receipt', '#roll'];
 /* while a form is open the bottom menu is hidden, so it can never cover the submit button */
 function openSheet(id){ SHEETS.forEach(s => $(s).hidden = s !== id); $('#scrim').hidden = false; $('#buybar').hidden = true; document.body.classList.add('sheet-open'); plus.classList.add('open'); plus.setAttribute('aria-expanded', 'true'); $(id).scrollTop = 0; }
 function closeSheet(){ SHEETS.forEach(s => $(s).hidden = true); $('#scrim').hidden = true; document.body.classList.remove('sheet-open'); plus.classList.remove('open'); plus.setAttribute('aria-expanded', 'false'); if (cur) updateBuy(); }
@@ -615,7 +639,7 @@ $('#qMinus').addEventListener('click', () => { if (!cur || cur.kind !== 't') ret
 $('#qPlus').addEventListener('click', () => { if (!cur || cur.kind !== 't') return; const t = cur.item, max = t.cap - t.taken; if ((qty[t.id] || 1) < max) { qty[t.id] = (qty[t.id] || 1) + 1; updateBuy(); } else toast('Faqat ' + max + ' ta bo\'sh joy bor'); });
 $('#buyBtn').addEventListener('click', () => {
 if (!cur) return;
-if (cur.kind === 'r') { toggleCart(cur.item.id); return; }
+if (cur.kind === 'r') { const r = cur.item; if (r.mine) openReceipt(r.mine.id); else if (r.card) openRentPay(); else toast('Egasi hali karta kiritmagan. Unga izoh qoldiring.'); return; }
 if (cur.item.mine) { show('band'); return; }
 openPay();
 });
@@ -675,16 +699,178 @@ $('#rFile').addEventListener('change', e => { addPhotos(rdraft, [...(e.target.fi
 $('#rThumbs').addEventListener('click', e => { const b = e.target.closest('[data-rdel]'); if (!b) return; rdraft.splice(+b.dataset.rdel, 1); $('#rThumbs').innerHTML = thumbsHTML(rdraft, 'data-rdel', 'rFile'); });
 $('#rentForm').addEventListener('submit', async e => {
 e.preventDefault();
-const {v, errs} = validate(e.target, [['rName','jihoz nomi'],['rPrice','narx'],['rWhere','qayerdan olinishi']]);
+const {v, errs} = validate(e.target, [['rName','jihoz nomi'],['rPrice','narx'],['rWhere','qayerdan olinishi'],['rHolder','karta egasi']]);
 if (v('rPrice') && +v('rPrice') < 1000) { $('#rPrice').classList.add('bad'); errs.push('Narx kamida 1 000 so\'m bo\'lsin.'); }
+const rcard = v('rCard').replace(/\D/g, ''), rtg = normTg(v('rTg'));
+if (rcard.length !== 16) { $('#rCard').classList.add('bad'); errs.push('Karta raqami 16 ta raqam bo\'lishi kerak.'); }
+if (!rtg) { $('#rTg').classList.add('bad'); errs.push('Telegram username\'ni to\'g\'ri kiriting (masalan: aziz_karimov).'); }
 if (errs.length) { showErr('#rErr', errs); return; }
 const btn = e.target.querySelector('button[type=submit]'); busy(btn, true, 'Joylanmoqda…');
 try {
 const photos = []; for (const d of rdraft) photos.push(await upload(d));
 const { data, error } = await sb.from('rentals').insert({owner_id:S.user.id, name:v('rName'), price:Math.round(+v('rPrice')), pickup:v('rWhere'), description:v('rDesc') || null, photos}).select().single();
 if (error) throw error;
+const { error: e2 } = await sb.from('rental_payouts').insert({rental_id:data.id, card_number:rcard, card_holder:v('rHolder'), telegram:rtg});
+if (e2) throw e2;
 e.target.reset(); rdraft = []; closeSheet(); await refresh(); openItem('r:' + data.id); toast('Jihoz joylandi');
 } catch (er) { fail(er); } finally { busy(btn, false); }
+});
+/* ---------- roll call: the guide ticks who has arrived ---------- */
+let rollTour = null;
+function openRoll(id){ rollTour = id; renderRoll(); openSheet('#roll'); }
+function renderRoll(){
+const t = S.tours.find(x => x.id === rollTour); if (!t) return;
+const ps = t.participants.slice().sort((a, b) => a.name.localeCompare(b.name));
+const came = ps.filter(x => x.arrived), seats = ps.reduce((a, x) => a + x.n, 0), cameSeats = came.reduce((a, x) => a + x.n, 0);
+$('#rollTitle').textContent = I18N.t("Yo'qlama");
+$('#rollSub').textContent = `${t.name} · ${dLong(t.depDate)}, ${t.depTime} · ${t.meet}`;
+$('#rollList').innerHTML = ps.length ? ps.map(x => `<button type="button" class="rrow${x.arrived ? ' on' : ''}" data-arrive="${x.id}" aria-pressed="${x.arrived}">
+<span class="rname"><i class="rchk">${x.arrived ? '✓' : ''}</i><span>${esc(x.name)}</span></span><span class="rseats">${x.n}</span><span class="rpay"><b>${fmt(x.n * t.p)}</b><small>${esc(x.m)}</small></span></button>`).join('')
+: `<p class="sub" style="padding:16px">Hali hech kim band qilmagan.</p>`;
+$('#rollSum').innerHTML = `<div><b>${cameSeats} / ${seats}</b><span>keldi (kishi)</span></div><div><b>${ps.length - came.length}</b><span>kelmagan band</span></div><div><b>${fmt(seats * t.p)}</b><span>jami to'lov</span></div>`;
+}
+async function toggleArrived(bid){
+const t = S.tours.find(x => x.id === rollTour); if (!t) return;
+const x = t.participants.find(p => p.id === bid); if (!x) return;
+x.arrived = !x.arrived; renderRoll();
+const { error } = await sb.from('bookings').update({arrived:x.arrived}).eq('id', bid);
+if (error) { x.arrived = !x.arrived; renderRoll(); fail(error); return; }
+if (cur && cur.kind === 't' && cur.item.id === t.id) renderTour();
+}
+/* ---------- full-screen photo viewer ---------- */
+function openLightbox(srcs, i){
+if (!srcs || !srcs.length) return;
+let lb = $('#lightbox');
+if (!lb) { lb = document.createElement('div'); lb.id = 'lightbox'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-label', 'Rasm'); document.body.appendChild(lb); }
+lb.innerHTML = `<div class="lbs">${srcs.map((s, k) => `<div class="lbi"><img src="${esc(s)}" alt="${k + 1}-rasm" draggable="false"></div>`).join('')}</div>
+<button type="button" class="lbx" aria-label="Yopish"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>${srcs.length > 1 ? `<span class="lbn mono">${i + 1} / ${srcs.length}</span>` : ''}`;
+lb.hidden = false; document.body.classList.add('lbopen');
+const sc = lb.querySelector('.lbs');
+requestAnimationFrame(() => { sc.scrollLeft = i * sc.clientWidth; });
+sc.addEventListener('scroll', () => { const n = lb.querySelector('.lbn'); if (n) n.textContent = (Math.round(sc.scrollLeft / sc.clientWidth) + 1) + ' / ' + srcs.length; }, {passive:true});
+lb.querySelector('.lbx').onclick = closeLightbox;
+}
+function closeLightbox(){ const lb = $('#lightbox'); if (lb) { lb.hidden = true; lb.innerHTML = ''; } document.body.classList.remove('lbopen'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+/* ---------- renting gear: pay, receipt, owner's Telegram ---------- */
+const tgIc = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.4 3.6 2.9 10.7c-1.3.5-1.2 1.3-.2 1.6l4.7 1.5 1.8 5.6c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L22.9 5c.3-1.4-.5-2-1.5-1.4zM8.5 13.5l9.6-6-7.6 7.1-.3 3.4-1.7-4.5z"/></svg>';
+const normTg = s => { s = String(s || '').trim().replace(/^https?:\/\/(www\.)?(t|telegram)\.me\//i, '').replace(/^@/, '').replace(/\/.*$/, ''); return /^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(s) ? s : ''; };
+document.addEventListener('input', e => { if (e.target.id === 'rCard' || e.target.id === 'rpCard') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); });
+const tgCache = {};
+async function ownerTg(rid){ if (rid in tgCache) return tgCache[rid]; const { data, error } = await sb.rpc('rental_contact', {rid}); if (error) { console.warn(error); return null; } tgCache[rid] = data || null; return tgCache[rid]; }
+function wireOwnerPay(r){
+const f = $('#rPayForm'); if (!f) return;
+if (r.card) ownerTg(r.id).then(tg => { const n = $('#rTgName'); if (n) n.textContent = tg ? '@' + tg : I18N.t('kiritilmagan'); });
+const ed = $('#rPayEdit'); if (ed) ed.onclick = () => { f.hidden = false; ed.hidden = true; };
+f.onsubmit = async e => {
+e.preventDefault();
+const card = $('#rpCard').value.replace(/\D/g, ''), holder = $('#rpHolder').value.trim(), tg = normTg($('#rpTg').value), errs = [];
+if (card.length !== 16) { $('#rpCard').classList.add('bad'); errs.push('Karta raqami 16 ta raqam bo\'lishi kerak.'); }
+if (holder.length < 3) { $('#rpHolder').classList.add('bad'); errs.push('To\'ldiring: karta egasi.'); }
+if (!tg) { $('#rpTg').classList.add('bad'); errs.push('Telegram username\'ni to\'g\'ri kiriting (masalan: aziz_karimov).'); }
+if (errs.length) { showErr('#rpFormErr', errs); return; }
+const btn = f.querySelector('button[type=submit]'); busy(btn, true, 'Saqlanmoqda…');
+const { error } = await sb.from('rental_payouts').upsert({rental_id:r.id, card_number:card, card_holder:holder, telegram:tg});
+busy(btn, false);
+if (error) { fail(error); return; }
+delete tgCache[r.id]; await refresh(); toast('Saqlandi');
+};
+}
+let rpDays = 1;
+function paintRentPay(){
+const r = cur.item, d = $('#rpDate').value;
+$('#rpDays').textContent = rpDays;
+$('#rpDateShow').textContent = d ? dLong(d) + ' ' + d.slice(0, 4) : I18N.t('Sanani tanlang');
+const total = r.p * rpDays;
+$('#rpSum').innerHTML = `<div class="r"><span>Jihoz</span><b style="text-align:right">${esc(r.name)}</b></div><div class="r"><span>Olish</span><b>${d ? dLong(d) : '—'}</b></div><div class="r"><span>Qaytarish</span><b>${d ? dLong(addDays(d, rpDays)) : '—'}</b></div><div class="r"><span>${rpDays} kun × ${fmt(r.p)}</span><b>${fmt(total)}</b></div><div class="r tot"><span>Jami</span><b>${fmt(total)}</b></div>`;
+$('#rpBtn').innerHTML = `To'lash · ${fmt(total)}`;
+}
+function openRentPay(){
+if (!cur || cur.kind !== 'r') return;
+const r = cur.item; if (isMine(r) || r.mine) return;
+if (!r.card) { toast('Egasi hali karta kiritmagan. Unga izoh qoldiring.'); return; }
+rpDays = 1; payMethod = null; $$('.mt').forEach(m => m.setAttribute('aria-checked', 'false'));
+const today = todayTz(); $('#rpDate').min = today; $('#rpDate').value = today;
+$('#rpTo').innerHTML = `${cardIc}Ijaraga beruvchi: <b>${esc(person(r.ownerId).name)} · ${esc(r.card)}</b>`;
+$('#rpErr').hidden = true; paintRentPay(); openSheet('#rentPay');
+}
+['input', 'change'].forEach(ev => $('#rpDate').addEventListener(ev, () => cur && cur.kind === 'r' && paintRentPay()));
+$('#rpMinus').addEventListener('click', () => { if (rpDays > 1) { rpDays--; paintRentPay(); } else toast('Kamida 1 kun'); });
+$('#rpPlus').addEventListener('click', () => { if (rpDays < 30) { rpDays++; paintRentPay(); } else toast('Ko\'pi bilan 30 kun'); });
+$('#rpBtn').addEventListener('click', async () => {
+if (!cur || cur.kind !== 'r') return;
+const r = cur.item, d = $('#rpDate').value;
+if (!d || d < todayTz()) { $('#rpErr').textContent = I18N.t('Olish sanasini tanlang.'); $('#rpErr').hidden = false; return; }
+if (!payMethod) { $('#rpErr').textContent = I18N.t('To\'lov turini tanlang.'); $('#rpErr').hidden = false; return; }
+const btn = $('#rpBtn'); busy(btn, true, 'To\'lanmoqda…');
+const { data, error } = await sb.from('rental_bookings').insert({rental_id:r.id, user_id:S.user.id, start_date:d, days:rpDays, pay_method:payMethod}).select().single();
+busy(btn, false);
+if (error) { const m = /karta kiritmagan|o'tib ketgan|ijaraga ololmaysiz/i.exec(error.message || ''); fail(error, m ? error.message : null); return; }
+await refresh();
+openReceipt(data.id, true);
+});
+function cancelRental(id){
+ask('Ijarani bekor qilasizmi?', 'Jihoz egasining ro\'yxatidan o\'chirilasiz.', async () => {
+const { error } = await sb.from('rental_bookings').update({status:'cancelled'}).eq('id', id);
+if (error) { fail(error); return; }
+await refresh(); toast('Ijara bekor qilindi');
+});
+}
+/* receipt picture the renter saves and shows to the owner */
+async function receiptCanvas(b, r){
+try { await Promise.all([document.fonts.load('700 40px Onest'), document.fonts.load('700 80px "Space Grotesk"'), document.fonts.load('500 30px Onest')]); } catch (_) {}
+const W = 1080, H = 1560, c = document.createElement('canvas'); c.width = W; c.height = H;
+const x = c.getContext('2d'), T = s => I18N.t(s), F = (w, px) => `${w} ${px}px Onest, system-ui, sans-serif`;
+x.fillStyle = '#0B1511'; x.fillRect(0, 0, W, H);
+x.fillStyle = '#1F4D3A'; x.fillRect(0, 0, W, 250);
+x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+x.font = '700 92px "Space Grotesk", Onest, sans-serif';
+const w1 = x.measureText('sayohat').width, w2 = x.measureText('ga').width, lx = (W - w1 - w2) / 2;
+x.fillStyle = '#FFFFFF'; x.fillText('sayohat', lx, 158); x.fillStyle = '#F2A65A'; x.fillText('ga', lx + w1, 158);
+x.textAlign = 'center'; x.fillStyle = '#A6B4AC'; x.font = F(600, 30); x.fillText(T('IJARA CHEKI'), W / 2, 214);
+const paid = b.status === 'paid';
+const st = paid ? T("To'landi") + ' ✓' : T('Band qilindi') + ' ✓';
+x.font = F(700, 40); const sw = x.measureText(st).width + 80;
+x.fillStyle = paid ? 'rgba(70,201,139,.18)' : 'rgba(242,166,90,.18)';
+const rr = (X, Y, Wd, Hd, R) => { x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + Wd, Y, X + Wd, Y + Hd, R); x.arcTo(X + Wd, Y + Hd, X, Y + Hd, R); x.arcTo(X, Y + Hd, X, Y, R); x.arcTo(X, Y, X + Wd, Y, R); x.closePath(); };
+rr((W - sw) / 2, 300, sw, 76, 38); x.fill();
+x.fillStyle = paid ? '#46C98B' : '#F2A65A'; x.fillText(st, W / 2, 352);
+x.fillStyle = '#F1F5F2'; x.font = F(800, 96); x.fillText(fmt(b.amount), W / 2, 500);
+if (!paid) { x.fillStyle = '#FFC65C'; x.font = F(500, 28); x.fillText(T("Sinov rejimi: haqiqiy pul yechilmagan"), W / 2, 552); }
+const fit = (s, max) => { s = String(s); if (x.measureText(s).width <= max) return s; while (s.length > 1 && x.measureText(s + '…').width > max) s = s.slice(0, -1); return s + '…'; };
+const rows = [['Jihoz', r.name], ['Ijaraga beruvchi', person(r.ownerId).name], ['Mijoz', person(b.user_id).name], ['Olish sanasi', dLong(b.start_date) + ' ' + b.start_date.slice(0, 4)], ['Qaytarish sanasi', dLong(addDays(b.start_date, b.days)) + ' ' + addDays(b.start_date, b.days).slice(0, 4)], ['Muddat', T(b.days + ' kun')], ['Narx', fmt(r.p) + ' / ' + T('kun')], ["To'lov turi", b.pay_method], ['Chek raqami', '#' + rbCode(b.id)], ['Vaqt', (() => { const t = tz(b.created_at); return dLong(t.d) + ' ' + t.d.slice(0, 4) + ', ' + t.t; })()]];
+let y = 640;
+x.strokeStyle = 'rgba(255,255,255,.1)'; x.lineWidth = 2;
+rows.forEach(([k, v], i) => {
+x.textAlign = 'left'; x.fillStyle = '#7D8B83'; x.font = F(500, 32); x.fillText(T(k), 80, y);
+x.textAlign = 'right'; x.fillStyle = k === 'Chek raqami' ? '#F2A65A' : '#F1F5F2'; x.font = F(700, 34); x.fillText(fit(v, 560), W - 80, y);
+if (i < rows.length - 1) { x.beginPath(); x.moveTo(80, y + 30); x.lineTo(W - 80, y + 30); x.stroke(); }
+y += 78;
+});
+x.textAlign = 'center'; x.fillStyle = '#A6B4AC'; x.font = F(500, 30);
+x.fillText(T("Chekni jihoz egasiga Telegram'da ko'rsating"), W / 2, H - 120);
+x.fillStyle = '#7D8B83'; x.font = F(500, 26); x.fillText('iiqboljon013.github.io/sayohatga', W / 2, H - 70);
+return c;
+}
+let rcFile = null;
+async function openReceipt(id, fresh){
+const b = (S.rbs || []).find(x => x.id === id); if (!b) { toast('Chek topilmadi'); return; }
+const r = S.rentals.find(x => x.id === b.rental_id); if (!r) return;
+$('#rcTitle').textContent = I18N.t(fresh ? "Ijaraga olindi!" : 'Ijara cheki');
+$('#rcImg').removeAttribute('src'); $('#rcTg').hidden = true; $('#rcNoTg').hidden = true;
+openSheet('#receipt');
+const c = await receiptCanvas(b, r);
+$('#rcImg').src = c.toDataURL('image/png');
+rcFile = await new Promise(res => c.toBlob(bl => res(bl ? new File([bl], `sayohatga-chek-${rbCode(b.id)}.png`, {type:'image/png'}) : null), 'image/png'));
+const tg = await ownerTg(r.id);
+if (tg) { const a = $('#rcTg'); a.href = 'https://t.me/' + tg; a.querySelector('span').textContent = I18N.t("Egasiga Telegram'da yozish") + ' · @' + tg; a.hidden = false; }
+else $('#rcNoTg').hidden = false;
+}
+$('#rcSave').addEventListener('click', async () => {
+if (!rcFile) return;
+try { if (navigator.canShare && navigator.canShare({files:[rcFile]})) { await navigator.share({files:[rcFile], title:'sayohatga'}); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+const a = document.createElement('a'); a.href = URL.createObjectURL(rcFile); a.download = rcFile.name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+toast('Chek saqlandi');
 });
 /* ---------- new post ---------- */
 let pending = null;
@@ -698,7 +884,7 @@ if (f.size > MAX_VIDEO) { $('#pErr').textContent = 'Video 50 MB dan katta. Qisqa
 clearVid(); pending = {video:f}; const v = $('#pVid'); v.src = URL.createObjectURL(f); v.hidden = false; $('#pPrev').hidden = true; $('#dropHint').hidden = true; return;
 }
 if (!f.type.startsWith('image/')) { $('#pErr').textContent = 'Rasm yoki video tanlang.'; $('#pErr').hidden = false; return; }
-shrink(f, 1280, src => { clearVid(); pending = src; $('#pPrev').src = src; $('#pPrev').hidden = false; $('#dropHint').hidden = true; }); });
+shrink(f, 2048, src => { clearVid(); pending = src; $('#pPrev').src = src; $('#pPrev').hidden = false; $('#dropHint').hidden = true; }); });
 $('#postForm').addEventListener('submit', async e => {
 e.preventDefault();
 if (!pending) { $('#pErr').textContent = 'Avval rasm yoki video tanlang.'; $('#pErr').hidden = false; return; }
@@ -723,7 +909,12 @@ const t = e.target;
 if (t.closest('[data-back]')) { if (t.closest('#v-user') && userBack) { const b = userBack; userBack = null; if (openItem(b)) return; } show(prevView); return; }
 const us = t.closest('[data-user]'); if (us) { e.preventDefault(); e.stopPropagation(); openUser(us.dataset.user); return; }
 const go = t.closest('[data-go]'); if (go) { openItem(go.dataset.go); return; }
+const ro = t.closest('[data-roll]'); if (ro) { openRoll(ro.dataset.roll); return; }
+const ar = t.closest('[data-arrive]'); if (ar) { toggleArrived(ar.dataset.arrive); return; }
+const si = t.closest('[data-slides] img'); if (si && cur) { openLightbox(cur.item.photos, [...si.parentElement.children].indexOf(si)); return; }
 const cart = t.closest('[data-cart]'); if (cart) { e.stopPropagation(); toggleCart(cart.dataset.cart); return; }
+const rc = t.closest('[data-receipt]'); if (rc) { e.stopPropagation(); openReceipt(rc.dataset.receipt); return; }
+const rx = t.closest('[data-rcancel]'); if (rx) { e.stopPropagation(); cancelRental(rx.dataset.rcancel); return; }
 const op = t.closest('[data-open]'); if (op && !t.closest('button')) { openItem(op.dataset.open); return; }
 const bo = t.closest('[data-bookopen]'); if (bo) { if (openItem('t:' + bo.dataset.bookopen) && !cur.item.mine) openPay(); return; }
 const cx = t.closest('[data-cancel]'); if (cx) { cancelBooking(cx.dataset.cancel); return; }
@@ -816,7 +1007,11 @@ rerender();
 try {
 const { data: { session } } = await sb.auth.getSession();
 if (session) await startSession(session.user.id); else { await loadAll(); rerender(); }
-} catch (e) { console.error(e); toast(navigator.onLine ? 'Server bilan bog\'lanib bo\'lmadi' : 'Internet aloqasi yo\'q'); }
+} catch (e) {
+console.error(e);
+if (!S.user) { try { const st = JSON.parse(localStorage.getItem('sayohatga-auth') || 'null'); const uid = st && (st.user || (st.currentSession || {}).user || {}).id; if (uid) S.user = {id:uid}; } catch (_) {} }
+toast(navigator.onLine ? 'Server bilan bog\'lanib bo\'lmadi' : 'Internet aloqasi yo\'q');
+}
 dataReady = true; afterBoot();
 })();
 sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') { S.user = null; } });
