@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -51,24 +51,24 @@
     <div class="authtop"><div class="auth-logo">sayohat<b>ga</b></div><div class="langsw" role="group" aria-label="Til"><button type="button" data-lang="uz">O'z</button><button type="button" data-lang="ru">Ру</button><button type="button" data-lang="en">En</button></div></div>
     <form id="authStep1" novalidate style="display:flex;flex-direction:column;gap:14px">
       <h1>Ro'yxatdan o'tish</h1>
-      <p class="sub" style="font-size:14.5px">Tasdiqlash kodi Telegram'dagi @sayohatga_uz_bot orqali bepul yuboriladi.</p>
-      <div class="fld"><label for="aFirst">Ism</label><input id="aFirst" autocomplete="given-name" placeholder="Aziz"></div>
-      <div class="fld"><label for="aLast">Familiya</label><input id="aLast" autocomplete="family-name" placeholder="Karimov"></div>
-      <div class="fld"><label for="aPhone">Telefon raqam</label><div class="phone" id="aPhoneBox"><span>+998</span><input id="aPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="90 123 45 67" maxlength="12"></div></div>
+      <p class="sub" style="font-size:14.5px">«Kod olish» ni bosing — Telegram ochiladi va @sayohatga_uz_bot kodni darhol yuboradi.</p>
+      <div class="fld"><label for="aFirst" class="vh">Ism</label><input id="aFirst" autocomplete="given-name" placeholder="Ism"></div>
+      <div class="fld"><label for="aLast" class="vh">Familiya (ixtiyoriy)</label><input id="aLast" autocomplete="family-name" placeholder="Familiya (ixtiyoriy)"></div>
+      <div class="fld"><label for="aPhone" class="vh">Telefon raqam</label><div class="phone" id="aPhoneBox"><span>+998</span><input id="aPhone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="Telefon raqam" maxlength="12"></div></div>
       <p class="err" id="aErr1" hidden></p>
-      <button class="glow" type="submit" style="margin:4px 0 0;justify-content:center;height:54px">Kod yuborish</button>
+      <button class="glow green" type="submit" style="margin:4px 0 0;justify-content:center;height:54px"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.4 3.6 2.9 10.7c-1.3.5-1.2 1.3-.2 1.6l4.7 1.5 1.8 5.6c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L22.9 5c.3-1.4-.5-2-1.5-1.4zM8.5 13.5l9.6-6-7.6 7.1-.3 3.4-1.7-4.5z"/></svg>Kod olish</button>
     </form>
     <form id="authStep2" novalidate hidden style="display:flex;flex-direction:column;gap:14px">
       <h1>Kodni kiriting</h1>
       <p class="sub" style="font-size:14.5px" id="aSentTo"></p>
-      <a class="tgbtn" id="aTg" href="https://t.me/sayohatga_uz_bot?start=kod" target="_blank" rel="noopener" style="margin:0;justify-content:center;height:54px"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.4 3.6 2.9 10.7c-1.3.5-1.2 1.3-.2 1.6l4.7 1.5 1.8 5.6c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L22.9 5c.3-1.4-.5-2-1.5-1.4zM8.5 13.5l9.6-6-7.6 7.1-.3 3.4-1.7-4.5z"/></svg>Telegram'da kodni olish</a>
+      <a class="tgbtn" id="aTg" href="https://t.me/sayohatga_uz_bot" target="_blank" rel="noopener" style="margin:0;justify-content:center;height:54px"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.4 3.6 2.9 10.7c-1.3.5-1.2 1.3-.2 1.6l4.7 1.5 1.8 5.6c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L22.9 5c.3-1.4-.5-2-1.5-1.4zM8.5 13.5l9.6-6-7.6 7.1-.3 3.4-1.7-4.5z"/></svg>Telegram'ni qayta ochish</a>
       <label for="aCode" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Tasdiqlash kodi</label>
       <input id="aCode" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="4" placeholder="····">
       <p class="err" id="aErr2" hidden></p>
       <button class="glow" type="submit" style="margin:0;justify-content:center;height:54px">Tasdiqlash</button>
       <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <button type="button" class="linkbtn" id="aBack">← Raqamni o'zgartirish</button>
-        <button type="button" class="linkbtn" id="aResend">Botni qayta ochish</button>
+        <button type="button" class="linkbtn" id="aResend">Yangi kod olish</button>
       </div>
     </form>
   </div>
@@ -92,7 +92,7 @@
         <button class="go" type="submit" aria-label="Qidirish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       </form>
     </div>
-    <div class="sec rv"><div><span class="secno">01</span><h2>Sayohatlar</h2></div></div>
+    <div class="sec rv"><div><h2>Sayohatlar</h2></div></div>
     <div class="filters rv" id="filters">
       <button type="button" data-f="all" aria-pressed="true"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>Hammasi</button>
       <button type="button" data-f="Oson" aria-pressed="false"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>Oson</button>
@@ -102,18 +102,18 @@
     <div class="viewsw rv" id="viewSw" role="group" aria-label="Ko'rinish"><button type="button" data-view="list" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Ro'yxat</button><button type="button" data-view="map" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Xarita</button></div>
     <div id="tours" style="display:flex;flex-direction:column;gap:16px"></div>
     <div id="toursMap" class="map homemap" hidden></div>
-    <div class="sec rv"><div><span class="secno">02</span><h2>Lavhalar</h2></div><button type="button" class="chip act" data-act="photo">+ Rasm joylash</button></div>
+    <div class="sec rv"><div><h2>Lavhalar</h2></div><button type="button" class="chip act" data-act="photo">+ Rasm joylash</button></div>
     <div id="feed" style="display:flex;flex-direction:column;gap:16px"></div>
   </section>
 
   <section id="v-ijara" hidden style="flex-direction:column;gap:18px">
-    <div class="sec rv"><div><span class="secno">03</span><h2>Jihozlar <span class="grad">ijarasi</span></h2></div><button type="button" class="chip act" data-act="ijara">+ Ijaraga berish</button></div>
+    <div class="sec rv"><div><h2>Jihozlar <span class="grad">ijarasi</span></h2></div><button type="button" class="chip act" data-act="ijara">+ Ijaraga berish</button></div>
     <p class="rv" style="color:var(--tx-2)">Narxlar bir kun uchun. Jihozni bosib, batafsil ko'ring.</p>
     <div class="gear" id="gear"></div>
   </section>
 
   <section id="v-band" hidden style="flex-direction:column;gap:18px">
-    <div class="sec rv"><div><span class="secno">04</span><h2>Bandlarim</h2></div></div>
+    <div class="sec rv"><div><h2>Bandlarim</h2></div></div>
     <div id="booked"></div>
   </section>
 
@@ -335,7 +335,7 @@
 <noscript><p style="padding:24px">sayohatga — O'zbekiston tog'lari va o'rmonlariga sayohatlar, gidlar va jihozlar ijarasi. Ilovadan foydalanish uchun JavaScript'ni yoqing.</p></noscript>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="i18n.js?v=8"></script>
-<script src="app.js?v=8"></script>
+<script src="i18n.js?v=9"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

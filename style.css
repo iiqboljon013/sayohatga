@@ -693,3 +693,161 @@ body:not(.scrolled) .app:has(#v-sayohat:not([hidden])) .top .glassbtn{background
 @media (min-width:700px){.app:has(#v-sayohat:not([hidden])) .hero{margin-top:4px;padding-top:28px}body:not(.scrolled) .app:has(#v-sayohat:not([hidden])) .top .glassbtn{background:var(--panel);border-color:var(--line);color:var(--tx)}}
 .post .ph b.ulink{display:block}
 .mytour .thumb .logoph span{font-size:9px;white-space:nowrap}.logoph span b{font-size:inherit!important}
+
+/* =====================================================================
+   Controls v2 — beige & bronze for interactive elements,
+   dark forest stays the brand. Soft borders, round corners, calm motion.
+   ===================================================================== */
+:root{
+  --beige:#F7F1E5; --beige-2:#EFE6D4; --beige-3:#E7DBC4;
+  --sand:#DDCBAE; --sand-2:#C8AF88;
+  --bronze:#94673D; --bronze-2:#7F5732; --bronze-ink:#8A5D33; --on-bronze:#FBF6EC;
+  --ph:#AD997D;
+  --ring:0 0 0 4px rgba(148,103,61,.14);
+  --spring:cubic-bezier(.34,1.36,.64,1);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --beige:#1A221C; --beige-2:#212A23; --beige-3:#28322A;
+    --sand:rgba(205,170,124,.24); --sand-2:rgba(205,170,124,.46);
+    --bronze:#C99A68; --bronze-2:#D8AC7C; --bronze-ink:#D9B084; --on-bronze:#1E150C;
+    --ph:#8D7B64;
+    --ring:0 0 0 4px rgba(201,154,104,.18);
+  }
+}
+
+/* ---- text fields ---- */
+.fld input,.fld textarea,.fld select,.phone,.code,.cform input,.sharebox input{
+  background:var(--beige);border:1px solid var(--sand);border-radius:14px;color:var(--tx);
+  transition:border-color .25s var(--ease),box-shadow .3s var(--ease),background-color .25s var(--ease)}
+.fld input,.fld select{height:52px;padding:0 16px}
+.fld textarea{padding:14px 16px}
+.fld input::placeholder,.fld textarea::placeholder,.phone input::placeholder,.code::placeholder,.cform input::placeholder,.sharebox input::placeholder{color:var(--ph);opacity:1}
+@media (hover:hover){
+  .fld input:hover,.fld textarea:hover,.fld select:hover,.phone:hover,.code:hover,.cform input:hover{border-color:var(--sand-2)}
+}
+.fld input:focus,.fld textarea:focus,.fld select:focus,.code:focus,.cform input:focus,.sharebox input:focus,.phone:focus-within{
+  outline:none;border-color:var(--bronze);background:var(--panel);box-shadow:var(--ring)}
+@media (prefers-color-scheme:dark){.fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--bronze)}}
+.fld select{appearance:none;-webkit-appearance:none;padding-right:42px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394673D' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+.phone{height:54px}
+.phone span{color:var(--bronze-ink);font-weight:600;padding-right:10px;margin-right:4px;border-right:1px solid var(--sand);line-height:22px}
+.fld .bad,.phone.bad{border-color:var(--rose)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--rose) 12%,transparent)!important;animation:nudge .35s var(--ease)}
+@keyframes nudge{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.fld label{color:var(--bronze-ink)}
+.fsec{color:var(--bronze-ink)}
+.code{height:68px;border-radius:16px;letter-spacing:.6em}
+
+/* ---- primary CTA: bronze; brand CTA: forest ---- */
+.glow{background:var(--bronze);color:var(--on-bronze);border-radius:14px;font-weight:700;letter-spacing:.005em;
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 10px 22px -14px rgba(127,87,50,.9);
+  transition:transform .35s var(--spring),box-shadow .3s var(--ease),background-color .25s var(--ease)}
+.glow.green,#auth .glow{background:var(--forest);color:var(--on-forest);box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 12px 24px -14px rgba(23,60,45,.95)}
+.glow.green svg{color:#F2A65A}
+@media (hover:hover){
+  .glow:hover{background:var(--bronze-2);transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 16px 28px -14px rgba(127,87,50,.95)}
+  .glow.green:hover,#auth .glow:hover{background:var(--forest-2);box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 18px 30px -14px rgba(23,60,45,1)}
+}
+.glow:active{transform:translateY(0) scale(.975);transition-duration:.12s}
+.glow.done{background:transparent;color:var(--leaf);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--leaf) 50%,transparent)}
+.spin{border-color:color-mix(in srgb,currentColor 28%,transparent);border-top-color:currentColor}
+@media (prefers-color-scheme:dark){.glow.green,#auth .glow{background:#2A6A50}}
+
+/* ---- secondary buttons: beige with sand outline ---- */
+.ghost,.cbtn,.maplinks a,.sharerow a,.tgbtn,.geobtn,.sharebox button,.add,.stepper,.langsw,.chip,.opt,.mt,.menu .ic,.xclose{
+  transition:transform .3s var(--spring),background-color .25s var(--ease),border-color .25s var(--ease),box-shadow .3s var(--ease),color .2s}
+.ghost,.cbtn,.maplinks a,.sharerow a{background:var(--beige);box-shadow:none;border:1px solid var(--sand);border-radius:14px;color:var(--tx)}
+.tgbtn{background:var(--beige);border:1px solid var(--sand);color:var(--tx);box-shadow:none;border-radius:14px}
+.tgbtn svg{color:#2AABEE}
+.geobtn,.sharebox button{background:var(--beige-2);color:var(--bronze-ink);border:1px solid var(--sand);border-radius:14px}
+.danger{border-radius:14px;box-shadow:none;border:1px solid color-mix(in srgb,var(--rose) 40%,transparent);background:color-mix(in srgb,var(--rose) 5%,var(--beige))}
+.dangerfill{border-radius:14px}
+.chip,.chip.act{background:var(--beige);border:1px solid var(--sand);color:var(--bronze-ink);border-radius:999px;padding:0 14px}
+.linkbtn{color:var(--bronze-ink)}
+.add{background:var(--beige);box-shadow:none;border:1px solid var(--sand);color:var(--bronze-ink);border-radius:12px}
+.add.on{background:var(--forest);border-color:var(--forest);color:var(--on-forest)}
+.add.minus{background:color-mix(in srgb,var(--rose) 6%,var(--beige));border-color:color-mix(in srgb,var(--rose) 35%,transparent);color:var(--rose)}
+.stepper{background:var(--beige);box-shadow:none;border:1px solid var(--sand);border-radius:14px}
+.stepper button{color:var(--bronze-ink);border-radius:12px;transition:background-color .2s}
+.langsw{background:var(--beige);border:1px solid var(--sand);border-radius:999px}
+.langsw button{border-radius:999px;color:var(--bronze-ink);transition:background-color .3s var(--ease),color .3s}
+.opt{background:var(--beige);border:1px solid var(--sand);border-radius:16px}
+.menu .ic{background:var(--beige);border-color:var(--sand);color:var(--bronze-ink)}
+.xclose{background:var(--beige);border:1px solid var(--sand);border-radius:50%}
+.filters{background:var(--beige);border-color:var(--sand)}
+.filters button+button{box-shadow:inset 1px 0 0 var(--sand)}
+.viewsw button[aria-pressed="true"]::after{background:var(--bronze)}
+@media (hover:hover){
+  .ghost:hover,.cbtn:hover,.maplinks a:hover,.sharerow a:hover,.tgbtn:hover,.geobtn:hover,.sharebox button:hover,.chip:hover,.add:not(.on):hover,.opt:hover,.menu a:hover .ic,.xclose:hover{background:var(--beige-2);border-color:var(--sand-2);transform:translateY(-1px)}
+  .stepper button:hover{background:var(--beige-2)}
+  .linkbtn:hover{color:var(--bronze)}
+  .langsw button:not([aria-pressed="true"]):hover{background:var(--beige-2)}
+  .filters button:not([aria-pressed="true"]):hover{background:var(--beige-2)}
+}
+.ghost:active,.cbtn:active,.maplinks a:active,.sharerow a:active,.tgbtn:active,.geobtn:active,.chip:active,.add:active,.opt:active,.xclose:active{transform:scale(.97);transition-duration:.12s}
+
+/* ---- radio (payment methods): minimal ring ---- */
+.mt{position:relative;background:var(--beige);border:1px solid var(--sand);border-radius:14px;padding-right:40px}
+.mt::after{content:"";position:absolute;right:14px;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:50%;border:1.5px solid var(--sand-2);background:var(--panel);transition:border-color .25s,box-shadow .3s var(--spring),background-color .25s}
+.mt i{background:var(--panel);border-color:var(--sand)}
+.mt[aria-checked="true"]{border-color:var(--bronze);background:var(--panel);box-shadow:var(--ring)}
+.mt[aria-checked="true"]::after{border-color:var(--bronze);box-shadow:inset 0 0 0 4px var(--panel);background:var(--bronze)}
+.mt[aria-checked="true"] i{background:var(--bronze);color:var(--on-bronze);border-color:var(--bronze)}
+@media (hover:hover){.mt:not([aria-checked="true"]):hover{border-color:var(--sand-2);background:var(--beige-2)}}
+
+/* ---- checkbox (roll call) + any native box/radio ---- */
+.rchk{border-radius:7px;border:1.5px solid var(--sand-2);background:var(--panel);transition:background-color .25s,border-color .25s,transform .4s var(--spring)}
+.rrow.on .rchk{background:var(--forest);border-color:var(--forest);transform:none}
+@media (prefers-color-scheme:dark){.rrow.on .rchk{background:var(--leaf);border-color:var(--leaf)}}
+.rrow.on{background:color-mix(in srgb,var(--bronze) 7%,transparent)}
+input[type=checkbox],input[type=radio]{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:0;border:1.5px solid var(--sand-2);background:var(--panel);display:inline-grid;place-content:center;cursor:pointer;transition:border-color .2s,background-color .2s,box-shadow .3s}
+input[type=checkbox]{border-radius:6px}
+input[type=radio]{border-radius:50%}
+input[type=checkbox]::before{content:"";width:10px;height:6px;border-left:2px solid var(--on-bronze);border-bottom:2px solid var(--on-bronze);transform:rotate(-45deg) translate(1px,-1px) scale(0);transition:transform .3s var(--spring)}
+input[type=radio]::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--on-bronze);transform:scale(0);transition:transform .3s var(--spring)}
+input[type=checkbox]:checked,input[type=radio]:checked{background:var(--bronze);border-color:var(--bronze)}
+input[type=checkbox]:checked::before{transform:rotate(-45deg) translate(1px,-1px) scale(1)}
+input[type=radio]:checked::before{transform:scale(1)}
+input[type=checkbox]:focus-visible,input[type=radio]:focus-visible{box-shadow:var(--ring);outline:none}
+
+/* ---- profile pictures are round ---- */
+.avatar,.ubig{border-radius:50%}
+.avwrap .cam{border-radius:50%;right:-2px;bottom:-2px}
+
+/* ---- bottom nav + plus get the same calm motion ---- */
+.pill-nav button{transition:color .3s var(--ease)}
+.pill-nav button[aria-current="page"]::before{animation:navbar-in .4s var(--spring)}
+@keyframes navbar-in{from{transform:scaleX(0)}}
+.pill-nav .plus{transition:transform .4s var(--spring),background-color .25s}
+.pill-nav .plus svg{transition:transform .45s var(--spring)}
+@media (hover:hover){.pill-nav .plus:hover{transform:translateY(-2px)}}
+
+/* ---- sheets: softer arrival ---- */
+.sheet{animation:sheet-up .5s var(--ease-out)}
+@keyframes sheet-up{from{transform:translateY(60px);opacity:0}}
+.sheet>*{animation:fade-up .5s var(--ease-out) both}
+.sheet>*:nth-child(2){animation-delay:.04s}.sheet>*:nth-child(3){animation-delay:.08s}.sheet>*:nth-child(4){animation-delay:.12s}.sheet>*:nth-child(5){animation-delay:.16s}.sheet>*:nth-child(n+6){animation-delay:.2s}
+.scrim{animation:fade .35s ease}
+@media (min-width:1024px){.sheet{animation:pop .4s var(--ease-out)}}
+
+/* ---- sign-up: calm, staged entrance ---- */
+#auth .auth-in form:not([hidden])>*{animation:fade-up .6s var(--ease-out) both}
+#auth .auth-in form:not([hidden])>*:nth-child(1){animation-delay:.05s}
+#auth .auth-in form:not([hidden])>*:nth-child(2){animation-delay:.1s}
+#auth .auth-in form:not([hidden])>*:nth-child(3){animation-delay:.15s}
+#auth .auth-in form:not([hidden])>*:nth-child(4){animation-delay:.2s}
+#auth .auth-in form:not([hidden])>*:nth-child(5){animation-delay:.25s}
+#auth .auth-in form:not([hidden])>*:nth-child(n+6){animation-delay:.3s}
+#auth .auth-in{gap:18px}
+#auth form{gap:12px!important}
+#auth .auth-word{animation:wm-rise 1s var(--ease-out) both .1s}
+@keyframes wm-rise{from{opacity:0;transform:translateY(24px)}}
+#auth .fld{gap:0}
+#auth .err{padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--rose) 7%,var(--beige));animation:fade-up .35s var(--ease-out)}
+#auth .sub{line-height:1.55}
+#auth .linkbtn{font-size:13.5px}
+
+@media (prefers-reduced-motion:reduce){
+  .sheet>*,#auth .auth-in form>*,#auth .auth-word{animation:none!important}
+}

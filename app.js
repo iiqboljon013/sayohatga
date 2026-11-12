@@ -968,27 +968,51 @@ $('#bell').addEventListener('click', () => toast('Hozircha yangi bildirishnoma y
 let pendingUser = null;
 function showAuth(){ closeSheet(); $('#auth').hidden = false; $('#authStep1').hidden = false; $('#authStep2').hidden = true; $('#aErr1').hidden = true; document.body.classList.add('booting'); setTimeout(() => $('#aFirst').focus(), 50); }
 $('#aPhone').addEventListener('input', e => { const d = e.target.value.replace(/\D/g, '').slice(0, 9); e.target.value = [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(' '); $('#aPhoneBox').classList.remove('bad'); });
-$('#authStep1').addEventListener('submit', e => {
+const BOTNAME = 'sayohatga_uz_bot';
+const newToken = () => { const b = crypto.getRandomValues(new Uint8Array(18)); return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const tgLink = t => `https://t.me/${BOTNAME}?start=${t}`;
+async function startLogin(){
+const r = await fetch(SB_URL + '/functions/v1/telegram-auth', {method:'POST', headers:{'Content-Type':'application/json', apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY}, body:JSON.stringify({action:'start', token:pendingUser.token, phone:'+998' + pendingUser.phone, first_name:pendingUser.first, last_name:pendingUser.last})});
+const j = await r.json().catch(() => ({}));
+if (!j.ok) throw Object.assign(new Error(j.error || 'start_failed'), {code:j.error});
+}
+function authErr2(msg){ $('#aErr2').textContent = msg; $('#aErr2').hidden = false; }
+$('#authStep1').addEventListener('submit', async e => {
 e.preventDefault();
 const first = $('#aFirst').value.trim(), last = $('#aLast').value.trim(), phone = $('#aPhone').value.replace(/\D/g, '');
 const errs = [];
-$('#aFirst').classList.toggle('bad', first.length < 2); $('#aLast').classList.toggle('bad', last.length < 2); $('#aPhoneBox').classList.toggle('bad', phone.length !== 9);
-if (first.length < 2) errs.push('ismingizni'); if (last.length < 2) errs.push('familiyangizni'); if (phone.length !== 9) errs.push('9 xonali telefon raqamingizni');
+$('#aFirst').classList.toggle('bad', first.length < 1); $('#aPhoneBox').classList.toggle('bad', phone.length !== 9);
+if (first.length < 1) errs.push('ismingizni'); if (phone.length !== 9) errs.push('9 xonali telefon raqamingizni');
 if (errs.length) { $('#aErr1').textContent = 'Iltimos, ' + errs.join(', ') + ' kiriting.'; $('#aErr1').hidden = false; return; }
-pendingUser = {first, last, phone};
-$('#aSentTo').textContent = `+998 ${$('#aPhone').value} uchun kodni Telegram botimizdan oling: botni oching, Start'ni bosing va «Raqamni ulashish» tugmasi orqali shu raqamni yuboring.`;
+$('#aErr1').hidden = true;
+pendingUser = {first, last, phone, token:newToken()};
+const link = tgLink(pendingUser.token);
+$('#aTg').href = link;
+window.open(link, '_blank', 'noopener');   // shu bosishning o'zida: brauzer bloklamaydi
+$('#aSentTo').textContent = `Telegram ochildi — @${BOTNAME} sizga 4 xonali kod yubordi. Shu yerga kiriting. Telegram ochilmagan bo'lsa, pastdagi tugmani bosing.`;
 $('#aCode').value = ''; $('#aErr2').hidden = true;
 $('#authStep1').hidden = true; $('#authStep2').hidden = false;
+$('#auth').classList.add('step2');
+const btn = e.target.querySelector('button[type=submit]');
+try { busy(btn, true, 'Yuborilmoqda…'); await startLogin(); setTimeout(() => $('#aCode').focus(), 350); }
+catch (er) { authErr2(er.code === 'too_many_requests' ? 'Juda ko\'p urinish. 10 daqiqadan keyin qayta urinib ko\'ring.' : (navigator.onLine ? 'Kod so\'rovini yuborib bo\'lmadi. «Telegram\'ni qayta ochish» ni bosing.' : 'Internet aloqasi yo\'q.')); console.error(er); }
+finally { busy(btn, false); }
+});
+$('#aResend').addEventListener('click', async () => {
+if (!pendingUser) return;
+pendingUser.token = newToken(); const link = tgLink(pendingUser.token); $('#aTg').href = link;
+window.open(link, '_blank', 'noopener'); $('#aCode').value = ''; $('#aErr2').hidden = true;
+try { await startLogin(); toast('Telegram\'ga yangi kod yuborildi'); } catch (er) { authErr2(er.code === 'too_many_requests' ? 'Juda ko\'p urinish. 10 daqiqadan keyin qayta urinib ko\'ring.' : 'Kod so\'rovini yuborib bo\'lmadi.'); }
 });
 $('#aCode').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); $('#aErr2').hidden = true; });
-const AUTH_ERR = {no_code:'Avval Telegram botdan kod oling. Botga shu raqam bilan ro\'yxatdan o\'tgan Telegram akkauntidan kiring.', expired:'Kod muddati tugadi. Botdan yangi kod oling.', too_many_tries:'Kod ko\'p marta noto\'g\'ri kiritildi. Botdan yangi kod oling.', bad_input:'Telefon raqam yoki kod noto\'g\'ri.'};
+const AUTH_ERR = {no_code:'Kod hali kelmadi. Telegram\'da botni oching va «Start» ni bosing — kod darhol keladi.', phone_taken:'Bu raqam boshqa Telegram akkauntga bog\'langan. O\'sha akkauntdan kiring.', expired:'Kod muddati tugadi. Botdan yangi kod oling.', too_many_tries:'Kod ko\'p marta noto\'g\'ri kiritildi. Botdan yangi kod oling.', bad_input:'Telefon raqam yoki kod noto\'g\'ri.'};
 $('#authStep2').addEventListener('submit', async e => {
 e.preventDefault();
 const c = $('#aCode').value;
 if (c.length !== 4) { $('#aErr2').textContent = '4 xonali kodni kiriting.'; $('#aErr2').hidden = false; return; }
 const btn = e.target.querySelector('button[type=submit]'); busy(btn, true, 'Tekshirilmoqda…');
 try {
-const r = await fetch(SB_URL + '/functions/v1/telegram-auth', {method:'POST', headers:{'Content-Type':'application/json', apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY}, body:JSON.stringify({phone:'+998' + pendingUser.phone, code:c, first_name:pendingUser.first, last_name:pendingUser.last})});
+const r = await fetch(SB_URL + '/functions/v1/telegram-auth', {method:'POST', headers:{'Content-Type':'application/json', apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY}, body:JSON.stringify({token:pendingUser.token, code:c})});
 const j = await r.json().catch(() => ({}));
 if (!j.ok) { $('#aErr2').textContent = j.error === 'wrong_code' ? `Kod noto'g'ri. Yana ${j.tries_left} ta urinish qoldi.` : (AUTH_ERR[j.error] || 'Kirib bo\'lmadi. Birozdan keyin qayta urinib ko\'ring.'); $('#aErr2').hidden = false; return; }
 const { error } = await sb.auth.setSession({access_token:j.access_token, refresh_token:j.refresh_token});
@@ -1000,8 +1024,7 @@ if (location.hash) route();
 } catch (er) { $('#aErr2').textContent = navigator.onLine ? 'Server bilan bog\'lanib bo\'lmadi. Qayta urinib ko\'ring.' : 'Internet aloqasi yo\'q.'; $('#aErr2').hidden = false; console.error(er); }
 finally { busy(btn, false); }
 });
-$('#aBack').addEventListener('click', () => { $('#authStep2').hidden = true; $('#authStep1').hidden = false; });
-$('#aResend').addEventListener('click', () => window.open(BOT, '_blank', 'noopener'));
+$('#aBack').addEventListener('click', () => { $('#authStep2').hidden = true; $('#authStep1').hidden = false; $('#auth').classList.remove('step2'); });
 async function startSession(id){ S.user = {id}; await loadAll(); rerender(); }
 /* ---------- hero spark ---------- */
 (function spark(){ const p = $('#ridgePath'), c = $('#spark'); if (!p || reduce) { if (c) c.remove(); return; } const len = p.getTotalLength(), t0 = performance.now(); const step = now => { const pt = p.getPointAtLength(len * (((now - t0) % 5200) / 5200)); c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y); requestAnimationFrame(step); }; requestAnimationFrame(step); })();
