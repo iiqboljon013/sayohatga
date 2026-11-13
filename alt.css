@@ -14,7 +14,7 @@
 :root[data-tod="day"]{--sky1:#6FA6CF;--sky2:#B6D5E6;--sky3:#EAF0E6;--sun:#FFF6DA;--sun-glow:rgba(255,246,218,.55);--m0:#A9C2C4;--m1:#86A9A1;--m2:#557F6C;--m3:#2A5241;--m4:#122419;--fog:rgba(255,255,255,.55)}
 :root[data-tod="dusk"]{--sky1:#2A2347;--sky2:#8E4F6E;--sky3:#EC955E;--sun:#FFB37A;--sun-glow:rgba(255,150,100,.55);--m0:#8D7086;--m1:#6B5470;--m2:#463F57;--m3:#29303A;--m4:#101814;--fog:rgba(255,180,160,.32)}
 :root[data-tod="night"]{--sky1:#05090F;--sky2:#0C1724;--sky3:#1A2A33;--sun:#E9EEF2;--sun-glow:rgba(200,220,255,.25);--m0:#2B3B49;--m1:#22313C;--m2:#19272E;--m3:#111C1F;--m4:#080F0C;--fog:rgba(170,200,230,.12);--stars:1}
-@media (prefers-color-scheme:dark){:root{--es-cloud:rgba(236,239,232,.08);--es-far:rgba(70,201,139,.1);--es-near:rgba(70,201,139,.18);--es-ink:#ECEFE8}}
+@media not all{:root{--es-cloud:rgba(236,239,232,.08);--es-far:rgba(70,201,139,.1);--es-near:rgba(70,201,139,.18);--es-ink:#ECEFE8}}
 
 /* old reveal system is replaced by motion.js reveals */
 .anim .rv{opacity:1;transform:none;transition:none}
@@ -50,7 +50,7 @@
 .pk-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(84px + env(safe-area-inset-top,0px)) 20px 0;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--pk-ink2)}
 .pk-hello{display:inline-flex;align-items:center;gap:8px}
 .pk-hello i{width:20px;height:5px;background:var(--dawn,#E8863A);clip-path:polygon(10% 0,100% 0,90% 100%,0 100%)}
-.pk-copy{display:flex;flex-direction:column;gap:14px;padding:0 20px 22px;will-change:opacity}
+.pk-copy{display:flex;flex-direction:column;gap:14px;margin-top:auto;padding:0 20px 22px;will-change:opacity}
 .pk-word{margin:0;font-family:var(--logo);font-weight:700;font-size:clamp(54px,18vw,190px);line-height:.86;letter-spacing:-.05em;color:var(--pk-ink);will-change:transform;text-shadow:0 10px 40px rgba(0,0,0,.18)}
 .pk-m{display:inline-flex;overflow:hidden;padding:0 .04em .08em;margin-left:-.04em}
 .pk-m .ch{display:inline-block}
@@ -175,7 +175,7 @@ body.sheet-open .altg,body.lbopen .altg{opacity:0!important}
 [data-motion] .rail:not(.seen) .node{opacity:0;transform:translateX(-10px)}
 .rail.seen .node{transition:opacity .6s var(--e-out),transform .6s var(--e-out)}
 .rail.seen .node:nth-of-type(2){transition-delay:.15s}.rail.seen .node:nth-of-type(3){transition-delay:.3s}.rail.seen .node:nth-of-type(4){transition-delay:.45s}
-@media (prefers-color-scheme:dark){.rail .rline{background:var(--leaf)}.rail .node::before{border-color:var(--leaf)}}
+@media not all{.rail .rline{background:var(--leaf)}.rail .node::before{border-color:var(--leaf)}}
 /* map pin drops in */
 .sgpin span{animation:pindrop .8s var(--e-spring) .2s both;transform-origin:50% 100%}
 @keyframes pindrop{from{transform:translateY(-36px) scale(.6);opacity:0}}
