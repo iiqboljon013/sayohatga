@@ -29,18 +29,6 @@
     'Kod yuborish': ['Получить код', 'Get code'],
     "«Kod olish» ni bosing — Telegram ochiladi va @sayohatga_uz_bot kodni darhol yuboradi.": ['Нажмите «Получить код» — откроется Telegram, и @sayohatga_uz_bot сразу пришлёт код.', 'Tap “Get code” — Telegram opens and @sayohatga_uz_bot sends your code right away.'],
     'Kod olish': ['Получить код', 'Get code'],
-    'Xayrli tong': ['Доброе утро', 'Good morning'],
-    'Xayrli kun': ['Добрый день', 'Good afternoon'],
-    'Xayrli kech': ['Добрый вечер', 'Good evening'],
-    'Xayrli tun': ['Доброй ночи', 'Good night'],
-    "Tog'larga birga chiqamiz": ['Идём в горы вместе', "Let's head to the mountains together"],
-    "Jo'nashgacha": ['До отправления', 'Departs in'],
-    'soat': ['ч', 'h'],
-    'daqiqa': ['мин', 'min'],
-    "Hali e'lon yo'q. Birinchi sayohatni siz joylang.": ['Объявлений пока нет. Разместите первую поездку.', 'No trips yet. Be the first to post one.'],
-    "+ E'lon joylash": ['+ Разместить объявление', '+ Post a trip'],
-    "Hali jihoz yo'q. Birinchi bo'lib ijaraga bering.": ['Снаряжения пока нет. Сдайте в аренду первым.', 'No gear yet. Be the first to rent yours out.'],
-    'Manzil': ['Место', 'Destination'],
     "Telegram'ni qayta ochish": ['Открыть Telegram снова', 'Open Telegram again'],
     'Yangi kod olish': ['Получить новый код', 'Get a new code'],
     "Telegram ochildi — @sayohatga_uz_bot sizga 4 xonali kod yubordi. Shu yerga kiriting. Telegram ochilmagan bo'lsa, pastdagi tugmani bosing.": ['Telegram открыт — @sayohatga_uz_bot прислал вам 4-значный код. Введите его здесь. Если Telegram не открылся, нажмите кнопку ниже.', "Telegram is open — @sayohatga_uz_bot has sent you a 4-digit code. Enter it here. If Telegram didn't open, tap the button below."],
@@ -364,7 +352,6 @@
   };
   /* sentences built from pieces */
   const P = [
-    [/^(\d+) joy qoldi$/, (m, i) => i ? `${m[1]} ${num(m[1], 1, '', '', '', 'seat left', 'seats left')}` : `${num(m[1], 0, 'остался', 'осталось', 'осталось')} ${m[1]} ${num(m[1], 0, 'место', 'места', 'мест')}`],
     [/^(\d+) kun$/, (m, i) => i ? `${m[1]} ${num(m[1], 1, '', '', '', 'day', 'days')}` : `${m[1]} ${num(m[1], 0, 'день', 'дня', 'дней')}`],
     [/^(\d+) kun × (.+)$/, (m, i) => `${m[1]} ${i ? num(m[1], 1, '', '', '', 'day', 'days') : num(m[1], 0, 'день', 'дня', 'дней')} × ${m[2]}`],
     [/^(.+) · (\d+) kun · (#[A-Z0-9]+)$/, (m, i) => `${m[1]} · ${m[2]} ${i ? num(m[2], 1, '', '', '', 'day', 'days') : num(m[2], 0, 'день', 'дня', 'дней')} · ${m[3]}`],

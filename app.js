@@ -98,7 +98,7 @@ const tourThumb = t => t.photos.length ? `<img src="${esc(t.photos[0])}" alt="${
 let filter = 'all';
 /* seats drawn as a row of places (like a minibus) when the group is small, a bar otherwise */
 function seatsHTML(t){
-if (t.cap <= 24) return `<span class="seatmap" aria-hidden="true">${Array.from({length:t.cap}, (_, k) => `<i class="${k < t.taken ? 'on' : ''}" style="--k:${k}"></i>`).join('')}</span>`;
+if (t.cap <= 24) return `<span class="seatmap" aria-hidden="true">${Array.from({length:t.cap}, (_, k) => `<i class="${k < t.taken ? 'on' : ''}"></i>`).join('')}</span>`;
 return `<div class="meter"><i data-fill="${Math.round(t.taken / t.cap * 100)}"></i></div>`;
 }
 function tourCard(t){
@@ -108,7 +108,7 @@ return `<article class="card rv" data-open="t:${t.id}" tabindex="0" aria-label="
 <div class="cbody">
 <div class="ctitle"><div class="name">${esc(t.name)}</div><div class="place">${esc(t.place)}</div></div>
 <div class="route"><div class="rt"><span class="mono">KETISH</span><b>${dShort(t.depDate)}</b><small>${t.depTime}</small></div><i class="rtline" aria-hidden="true"></i><div class="rt end"><span class="mono">QAYTISH</span><b>${dShort(t.retDate)}</b><small>${t.retTime}</small></div></div>
-<div class="slots${full ? ' full' : ''}"><span>Joylar</span>${seatsHTML(t)}<b>${t.taken}/${t.cap}</b></div>${!full && t.cap - t.taken <= 3 ? `<em class="few">${t.cap - t.taken} joy qoldi</em>` : ''}
+<div class="slots${full ? ' full' : ''}"><span>Joylar</span>${seatsHTML(t)}<b>${t.taken}/${t.cap}</b></div>
 <div class="foot"><span class="ulink" data-user="${t.ownerId}" role="link" tabindex="0">${avHTML(t.ownerId)}<span class="who" style="min-width:0"><b>${esc(g.name)}</b><small>Gid</small></span></span>
 ${own ? `<button class="glow done" type="button" data-go="t:${t.id}">Sizning e'loningiz</button>` : `<button class="glow ${b ? 'done' : ''}" type="button" data-bookopen="${t.id}">${b ? 'Band qilindi ✓' : 'Band qilish'}</button>`}</div>
 </div></article>`;
@@ -116,30 +116,16 @@ ${own ? `<button class="glow done" type="button" data-go="t:${t.id}">Sizning e'l
 function renderTours(){
 const q = $('#q').value.trim().toLowerCase();
 const list = S.tours.filter(t => (filter === 'all' || t.lvl === filter) && (!q || (t.name + ' ' + t.place).toLowerCase().includes(q)));
-$('#tours').innerHTML = !S.loaded ? skel(2) : list.length ? list.map(tourCard).join('')
-: S.tours.length ? emptyScene("Bunday sayohat topilmadi. Boshqa joy nomini yozib ko'ring.") : emptyScene("Hali e'lon yo'q. Birinchi sayohatni siz joylang.", 'elon', "+ E'lon joylash");
+$('#tours').innerHTML = !S.loaded ? `<p class="empty">Yuklanmoqda…</p>` : list.length ? list.map(tourCard).join('')
+: S.tours.length ? `<p class="empty">Bunday sayohat topilmadi. Boshqa joy nomini yozib ko'ring.</p>` : `<p class="empty">Hali e'lon yo'q. Birinchi sayohatni pastdagi «+» tugmasi orqali joylang.</p>`;
 observe($('#tours'));
 if (homeView === 'map') renderHomeMap();
 }
-/* ---------- designed loading + empty moments ---------- */
-const skel = n => Array.from({length:n}, () => `<div class="skel" aria-hidden="true"><i class="s-ph"></i><i class="s-l"></i><i class="s-l s"></i><i class="s-l xs"></i></div>`).join('') + '<span class="vh">Yuklanmoqda…</span>';
-function emptyScene(text, act, label, kind){
-const art = kind === 'gear'
-? `<g class="es-pack"><rect x="128" y="62" width="44" height="58" rx="13" fill="var(--es-a)"/><rect x="136" y="86" width="28" height="22" rx="6" fill="var(--es-b)"/><path d="M138 62c0-14 24-14 24 0" fill="none" stroke="var(--es-ink)" stroke-width="4"/></g>`
-: kind === 'post'
-? `<g class="es-cam"><rect x="118" y="70" width="64" height="44" rx="9" fill="var(--es-a)"/><rect x="138" y="62" width="22" height="10" rx="3" fill="var(--es-a)"/><circle cx="150" cy="92" r="13" fill="var(--es-b)"/><circle cx="150" cy="92" r="6" fill="var(--es-ink)"/><circle class="es-flash" cx="172" cy="78" r="3" fill="#FFF3DC"/></g>`
-: `<g class="es-tent"><path d="M112 120 150 66l38 54z" fill="var(--es-a)"/><path d="M150 66l10 54h-20z" fill="var(--es-b)"/><path class="es-glow" d="M143 120h14l-7-26z" fill="#FFD9A0"/></g><g class="es-flag"><path d="M214 40v40" stroke="var(--es-ink)" stroke-width="2.5"/><path class="es-cloth" d="M215 41h18l-5 6 5 6h-18z" fill="var(--es-b)"/></g>`;
-return `<div class="scene-empty">
-<svg viewBox="0 0 300 150" aria-hidden="true"><g class="es-cloud c1"><ellipse cx="60" cy="34" rx="26" ry="9" fill="var(--es-cloud)"/><ellipse cx="74" cy="29" rx="16" ry="9" fill="var(--es-cloud)"/></g><g class="es-cloud c2"><ellipse cx="236" cy="22" rx="20" ry="7" fill="var(--es-cloud)"/></g>
-<path d="M0 150V108l46-34 34 22 52-50 44 38 38-28 86 56v38z" fill="var(--es-far)"/><path d="M0 150v-22l70-18 60 14 70-22 100 26v22z" fill="var(--es-near)"/>${art}</svg>
-<p>${text}</p>${act ? `<button type="button" class="chip act" data-act="${act}">${label}</button>` : ''}</div>`;
-}
-window.__places = () => [...new Set(S.tours.map(t => String(t.name).split(/\s+/).slice(0, 2).join(' ')))].filter(Boolean);
 /* ---------- rentals ---------- */
 const rentThumb = r => r.photos.length ? `<img src="${esc(r.photos[0])}" alt="${esc(r.name)}" loading="lazy">` : logoPh('md');
 function renderGear(){
 $('#gear').innerHTML = S.rentals.map(r => { const on = !!r.mine, own = isMine(r); return `<div class="g rv" data-open="r:${r.id}" tabindex="0" aria-label="${esc(r.name)} — batafsil"><div class="gph">${rentThumb(r)}</div><div class="gb"><b>${esc(r.name)}</b><small class="own${own ? '' : ' ulink'}"${own ? '' : ` data-user="${r.ownerId}"`}>${own ? 'Sizning jihozingiz' : esc(person(r.ownerId).name)}</small><div class="gr"><span>${fmt(r.p)}</span>${own ? '' : on ? `<span class="gbtns"><button class="add minus" type="button" data-rcancel="${r.mine.id}" aria-label="${esc(r.name)} — bekor qilish">−</button><button class="add on" type="button" data-receipt="${r.mine.id}" aria-label="${esc(r.name)} — chek">✓</button></span>` : `<button class="add" type="button" data-cart="${r.id}" aria-label="${esc(r.name)} — ijaraga olish">+</button>`}</div></div></div>`; }).join('')
-|| (S.loaded ? `<div style="grid-column:1/-1">${emptyScene("Hali jihoz yo'q. Birinchi bo'lib ijaraga bering.", 'ijara', '+ Ijaraga berish', 'gear')}</div>` : skel(2));
+|| `<p class="empty" style="grid-column:1/-1">${S.loaded ? "Hali jihoz yo'q. «+» → Ijara orqali birinchi bo'lib joylang." : 'Yuklanmoqda…'}</p>`;
 observe($('#gear'));
 }
 /* "+" on a gear card opens the item and its payment (or its receipt if already rented) */
@@ -169,7 +155,7 @@ return `<article class="post rv" id="post-${p.id}">
 ${p.cap ? `<p class="pcap"><b>${esc(who.name.split(' ')[0])}</b>${esc(p.cap)}</p>` : '<div style="height:12px"></div>'}
 </article>`;
 }
-function renderFeed(){ $('#feed').innerHTML = S.posts.map(postCard).join('') || (S.loaded ? emptyScene("Hali lavha yo'q. Sayohatingizdan birinchi rasmni joylang.", 'photo', '+ Rasm joylash', 'post') : ''); observe($('#feed')); }
+function renderFeed(){ $('#feed').innerHTML = S.posts.map(postCard).join('') || (S.loaded ? `<p class="empty">Hali lavha yo'q. Sayohatingizdan birinchi rasmni joylang.</p>` : ''); observe($('#feed')); }
 let likeBusy = new Set();
 async function setLike(id, val){
 const p = S.posts.find(x => x.id === id); if (!p || !S.user || likeBusy.has(id)) return;
@@ -185,12 +171,11 @@ function paintLike(p){ const nv = liked(p); $$(`[data-like="${p.id}"]`).forEach(
 /* ---------- booked ---------- */
 function renderBooked(){
 const ts = S.tours.filter(t => t.mine), items = myRentals().map(b => ({b, r:S.rentals.find(x => x.id === b.rental_id)})).filter(x => x.r);
-if (!ts.length && !items.length) { $('#booked').innerHTML = emptyScene('Hali hech narsa band qilinmagan.'); observe($('#booked')); return; }
+if (!ts.length && !items.length) { $('#booked').innerHTML = `<p class="empty rv">Hali hech narsa band qilinmagan.</p>`; observe($('#booked')); return; }
 const tickets = ts.map(t => { const bk = t.mine, g = person(t.ownerId); return `
 <div class="ticket rv">
 <span class="chip"><span class="live"></span>${bk.status === 'paid' ? "To'langan" : 'Band qilindi'} · ${bk.seats} kishi · ${fmt(t.p * bk.seats)} · ${esc(bk.pay_method)}</span>
 <div class="big" data-go="t:${t.id}" style="cursor:pointer">${esc(t.name)}</div>
-<div class="cd" data-dep="${t.depDate}T${t.depTime}:00+05:00" hidden><span class="lbl">Jo'nashgacha</span><span class="cdu"><b data-u="d"></b><small>kun</small></span><span class="cdu"><b data-u="h"></b><small>soat</small></span><span class="cdu"><b data-u="m"></b><small>daqiqa</small></span></div>
 <div class="legs"><div><b>${t.depTime}</b><small>${dLong(t.depDate)} · ${esc(t.meet)}</small></div><span class="mid">→</span><div><b>${t.retTime}</b><small>${dLong(t.retDate)}</small></div></div>
 <div class="foot"><span class="ulink" data-user="${t.ownerId}" role="link" tabindex="0">${avHTML(t.ownerId)}<span class="who"><b>${esc(g.name)}</b><small>Gidingiz</small></span></span><button class="glow done" type="button" data-cancel="${t.id}">Bekor qilish</button></div>
 </div>`; }).join('');
@@ -409,12 +394,10 @@ ${own ? `
 <button type="button" class="danger" data-deltour="${t.id}">${trashIc}E'lonni o'chirish</button>
 </div>` : ''}
 <p class="ddesc">${esc(t.desc)}</p>
-<div class="rail"><i class="rline" aria-hidden="true"></i>
-<div class="node"><span class="lbl">Ketish</span><b>${dLong(t.depDate)}, ${t.depTime}</b><small>${esc(t.meet)}</small></div>
-<div class="node peak-n"><span class="lbl">Manzil</span><b>${esc(t.place)}</b></div>
-<div class="node"><span class="lbl">Qaytish</span><b>${dLong(t.retDate)}, ${t.retTime}</b></div>
-</div>
 <div class="kv">
+<div><span>Ketish</span><b>${dLong(t.depDate)}, ${t.depTime}</b></div>
+<div><span>Qaytish</span><b>${dLong(t.retDate)}, ${t.retTime}</b></div>
+<div><span>Yig'ilish joyi</span><b>${esc(t.meet)}</b></div>
 <div><span>Qiyinlik</span><b>${esc(t.lvl)}</b></div>
 <div><span>Band qilingan</span><b>${t.taken} kishi · ${Math.max(0, free)} ta joy bo'sh</b></div>
 </div>
@@ -645,7 +628,7 @@ busy(pb, true, 'Band qilinmoqda…');
 const { error } = await sb.from('bookings').insert({tour_id:t.id, user_id:S.user.id, seats:k, pay_method:payMethod});
 busy(pb, false);
 if (error) { fail(error, /joy/i.test(error.message) ? 'Bo\'sh joy yetarli emas' : null); return; }
-$('#payBody').hidden = true; $('#payOk').hidden = false; if (window.Motion) Motion.buzz([12, 60, 18]);
+$('#payBody').hidden = true; $('#payOk').hidden = false;
 $('#payOkTxt').textContent = `${k} kishilik joy band qilindi. Gid ro'yxatida ko'rinasiz. To'lov tizimlari ulangach, to'lov shu yerdan amalga oshiriladi.`;
 await refresh(); await wait(1600); closeSheet();
 });
@@ -654,7 +637,6 @@ const t = S.tours.find(x => x.id === id); if (!t || !t.mine) return;
 ask('Band qilishni bekor qilasizmi?', 'Siz gidning ro\'yxatidan o\'chirilasiz.', async () => {
 const { error } = await sb.from('bookings').delete().eq('id', t.mine.id);
 if (error) { fail(error); return; }
-if (window.Motion) await Motion.tear((document.querySelector(`[data-cancel="${id}"]`) || {}).closest?.('.ticket'));
 await refresh(); toast('Band bekor qilindi');
 });
 }
@@ -836,7 +818,6 @@ function cancelRental(id){
 ask('Ijarani bekor qilasizmi?', 'Jihoz egasining ro\'yxatidan o\'chirilasiz.', async () => {
 const { error } = await sb.from('rental_bookings').update({status:'cancelled'}).eq('id', id);
 if (error) { fail(error); return; }
-if (window.Motion) await Motion.tear((document.querySelector(`[data-rcancel="${id}"]`) || {}).closest?.('.ticket'));
 await refresh(); toast('Ijara bekor qilindi');
 });
 }
@@ -973,7 +954,7 @@ else if (act === 'logout') ask('Akkauntdan chiqasizmi?', 'Qayta kirish uchun Tel
 });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-user]')) { e.stopPropagation(); openUser(e.target.dataset.user); return; } if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-open]')) openItem(e.target.dataset.open); if (e.key === 'Escape') closeSheet(); });
 $$('.pill-nav [data-v]').forEach(b => b.addEventListener('click', () => nav(() => show(b.dataset.v))));
-$('#filters').addEventListener('click', e => { const c = e.target.closest('button'); if (!c) return; filter = c.dataset.f; $$('#filters button').forEach(x => x.setAttribute('aria-pressed', x === c)); window.Motion ? Motion.flip($('#tours'), renderTours) : renderTours(); });
+$('#filters').addEventListener('click', e => { const c = e.target.closest('button'); if (!c) return; filter = c.dataset.f; $$('#filters button').forEach(x => x.setAttribute('aria-pressed', x === c)); renderTours(); });
 $('#q').addEventListener('input', renderTours);
 $('#viewSw').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setHomeView(b.dataset.view); });
 /* ---------- language ---------- */
